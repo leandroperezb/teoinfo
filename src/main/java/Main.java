@@ -1,3 +1,8 @@
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.data.category.DefaultCategoryDataset;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.io.File;
@@ -5,11 +10,36 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 public class Main {
+    public static void mostrarHistograma(JFrame frame) {
+
+        DefaultCategoryDataset dataset =  new DefaultCategoryDataset( );
+
+        int b = 1;
+        for(int k = 5; k < 100; k += 10){
+            Integer a = k;
+            dataset.addValue(new Integer(b), a, "");
+            b++;
+        }
+
+        JFreeChart histograma = ChartFactory.createBarChart("Histograma", "Intensidad de color:",
+                "Repeticiones" , dataset);
+        ChartPanel chartPanel = new ChartPanel( histograma );
+        chartPanel.setPreferredSize(new java.awt.Dimension( 560 , 367 ) );
+
+
+        frame.add(chartPanel);
+        frame.pack();
+
+    }
+
     public static void main(String[] args){
         JFrame frame = new JFrame("Teoría de la información");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800,600);
         frame.setLocation(300,80);
+
+        Main.mostrarHistograma(frame);
+
         frame.setVisible(true);
 
 
