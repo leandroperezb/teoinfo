@@ -8,28 +8,43 @@ import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
-    public static void mostrarHistograma(JFrame frame) {
+    public static DefaultCategoryDataset hacerDataset(Imagen imagen){
+        DefaultCategoryDataset dataset =  new DefaultCategoryDataset();
 
-        DefaultCategoryDataset dataset =  new DefaultCategoryDataset( );
+        Map<Integer, Integer> repeticiones = new HashMap<>();
 
-        int b = 1;
-        for(int k = 5; k < 100; k += 10){
-            Integer a = k;
-            dataset.addValue(new Integer(b), a, "");
-            b++;
+        //Anotar colores existentes y contar las repeticiones (cantidad de apariciones)
+        for (int y = 0; y < imagen.getHeight(); y++){
+            for (int x = 0; x < imagen.getWidth(); x++){
+                int color = imagen.getColor(x, y);
+                if (repeticiones.containsKey(color)) {
+                    repeticiones.put(color, repeticiones.get(color) + 1);
+                }else{
+                    repeticiones.put(color, 1);
+                }
+            }
         }
 
+        //Cargar en el dataset los valores obtenidos
+        for(Integer i: repeticiones.keySet()) {
+            dataset.addValue(repeticiones.get(i), i, "");
+        }
+
+        return dataset;
+    }
+
+    public static void mostrarHistograma(JFrame frame, DefaultCategoryDataset dataset) {
         JFreeChart histograma = ChartFactory.createBarChart("Histograma", "Intensidad de color:",
                 "Repeticiones" , dataset);
         ChartPanel chartPanel = new ChartPanel( histograma );
-        chartPanel.setPreferredSize(new java.awt.Dimension( 560 , 367 ) );
-
+        chartPanel.setPreferredSize(new java.awt.Dimension( 800 , 600 ) );
 
         frame.add(chartPanel);
         frame.pack();
-
     }
 
     public static void main(String[] args){
@@ -37,8 +52,6 @@ public class Main {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800,600);
         frame.setLocation(300,80);
-
-        Main.mostrarHistograma(frame);
 
         frame.setVisible(true);
 
@@ -50,6 +63,22 @@ public class Main {
             File selectedFile = fileChooser.getSelectedFile();
             try {
                 Imagen imagen = new Imagen(ImageIO.read(selectedFile));
+
+                //Main.mostrarHistograma(frame, Main.hacerDataset(imagen.obtenerCuadrantes().get(0)));
+                Main.mostrarHistograma(frame, Main.hacerDataset(imagen));
+
+                {
+                    JFrame frame2 = new JFrame("Imagen analizada");
+                    frame2.setSize(800,600);
+                    frame2.setLocation(300,80);
+
+                    ImagePanel im = new ImagePanel();
+                    im.setBackground(imagen.imagen);
+                    frame2.getContentPane().add(im);
+
+                    frame2.setVisible(true);
+                }
+
 
                 //imagen = imagen.obtenerCuadrantes().get(2);
 

@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.List;
 
 public class Imagen {
-    protected BufferedImage imagen;
+    public BufferedImage imagen;
     public static final int TAMANIOBLOQUECUADRANTE = 500;
 
     public Imagen(BufferedImage imagen){
