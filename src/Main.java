@@ -38,6 +38,25 @@ public class Main {
                     salida += "\n";
                     fileout.print(salida);
                 }*/
+                
+                
+                 ///////CONTAR COLORES/////
+                /*int colores[] = new int[256];
+                for (int i=0; i<256; i++) 
+                	colores[i]= 0;
+                
+                for(int i=0;i<imagen.getHeight();i++)
+                	for(int j=0;j<imagen.getWidth();j++) 
+                		colores[imagen.getColor(j, i)]++;
+               
+                int cantidadColores = 0;
+                for (int i=0;i<256;i++)
+                	if(colores[i]!=0)
+                		cantidadColores++;
+                
+                System.out.println("Cantidad de colores: "+ cantidadColores);*/
+                
+                ///FIN CONTAR COLORES //////////////
 
 
                 FuenteMarkoviana fuente = new FuenteMarkoviana(probabilidades);
