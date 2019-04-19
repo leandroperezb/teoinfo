@@ -1,7 +1,7 @@
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
-import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.xy.DefaultIntervalXYDataset;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Main {
-    public static DefaultCategoryDataset hacerDataset(Imagen imagen){
-        DefaultCategoryDataset dataset =  new DefaultCategoryDataset();
+    public static DefaultIntervalXYDataset hacerDataset(Imagen imagen){
+        DefaultIntervalXYDataset dataset = new DefaultIntervalXYDataset();
 
         Map<Integer, Integer> repeticiones = new HashMap<>();
 
@@ -31,14 +31,15 @@ public class Main {
 
         //Cargar en el dataset los valores obtenidos
         for(Integer i: repeticiones.keySet()) {
-            dataset.addValue(repeticiones.get(i), i, "");
+            dataset.addSeries(i,
+                    new double[][]{{i}, {i - 0.5d}, {i + 0.5d}, {repeticiones.get(i)}, {repeticiones.get(i)}, {repeticiones.get(i)}});
         }
 
         return dataset;
     }
 
-    public static void mostrarHistograma(JFrame frame, DefaultCategoryDataset dataset) {
-        JFreeChart histograma = ChartFactory.createBarChart("Histograma", "Intensidad de color:",
+    public static void mostrarHistograma(JFrame frame, DefaultIntervalXYDataset  dataset) {
+        JFreeChart histograma = ChartFactory.createHistogram("Histograma", "Intensidad de color:",
                 "Repeticiones" , dataset);
         ChartPanel chartPanel = new ChartPanel( histograma );
         chartPanel.setPreferredSize(new java.awt.Dimension( 800 , 600 ) );
