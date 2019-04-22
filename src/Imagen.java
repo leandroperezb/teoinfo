@@ -9,6 +9,7 @@ import java.util.List;
 public class Imagen {
     protected BufferedImage imagen;
     public static final int TAMANIOBLOQUECUADRANTE = 500;
+    protected final int CANTIDADCOLORES = 256;
 
     public Imagen(BufferedImage imagen){
         if (imagen == null) throw new IllegalArgumentException("No se permite un buffer nulo");
@@ -47,14 +48,12 @@ public class Imagen {
 
 
     public double[][] probabilidadesCondicionales(){
-        final int cantidadColores = 256; //Queda más lindo que el "256" metido en todos lados
-
-        double[][] probabilidades = new double[cantidadColores][cantidadColores];
-        int[] totales = new int[cantidadColores];
+        double[][] probabilidades = new double[CANTIDADCOLORES][CANTIDADCOLORES];
+        int[] totales = new int[CANTIDADCOLORES];
 
         //Inicializaciones
-        for (int i = 0; i < cantidadColores; i++) {
-            for (int j = 0; j < cantidadColores; j++) {
+        for (int i = 0; i < CANTIDADCOLORES; i++) {
+            for (int j = 0; j < CANTIDADCOLORES; j++) {
                 probabilidades[i][j] = 0d;
             }
             totales[i] = 0;
@@ -77,8 +76,8 @@ public class Imagen {
         }
 
         //Calcular las probabilidades de transición condicionales
-        for (int i = 0; i < cantidadColores; i++) {
-            for (int j = 0; j < cantidadColores; j++) {
+        for (int i = 0; i < CANTIDADCOLORES; i++) {
+            for (int j = 0; j < CANTIDADCOLORES; j++) {
                 if (totales[j] != 0)
                     probabilidades[i][j] /= totales[j];
             }
@@ -86,6 +85,49 @@ public class Imagen {
 
         return probabilidades;
     }
+
+
+    public double[] probabilidadesSimples(){
+        double[] probabilidades = new double[CANTIDADCOLORES];
+        int total = 0;
+
+        //Inicializaciones
+        for (int i = 0; i < CANTIDADCOLORES; i++) {
+                probabilidades[i] = 0d;
+        }
+
+
+        //Contabilizar cada transición entre símbolos
+        for (int y = 0; y < this.getHeight(); y++){
+            for (int x = 0; x < this.getWidth(); x++){
+                int color = this.getColor(x, y);
+                probabilidades[color]++;
+                total++;
+            }
+        }
+
+        //Calcular las probabilidades de transición condicionales
+        for (int i = 0; i < CANTIDADCOLORES; i++) {
+                probabilidades[i] /= total;
+        }
+
+        return probabilidades;
+    }
+
+
+    public double entropiaSimple(){
+        double[] probabilidades = this.probabilidadesSimples();
+
+        double entropia = 0d;
+
+        for (int i = 0; i < probabilidades.length; i++){
+            if (probabilidades[i] != 0)
+                entropia += probabilidades[i] * Math.log(probabilidades[i]) / Math.log(2d);
+        }
+
+        return -entropia;
+    }
+
 
     public void guardarComoArchivo(String ruta) throws IOException {
         ImageIO.write(imagen, "bmp", new File(ruta));

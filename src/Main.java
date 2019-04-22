@@ -21,6 +21,8 @@ public class Main {
             try {
                 Imagen imagen = new Imagen(ImageIO.read(selectedFile));
 
+                System.out.println("Entropía: " + imagen.entropiaSimple());
+
                 //imagen = imagen.obtenerCuadrantes().get(2);
 
                 double[][] probabilidades = imagen.probabilidadesCondicionales();
