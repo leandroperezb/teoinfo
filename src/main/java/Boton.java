@@ -13,6 +13,7 @@ public class Boton extends JPanel {
 	private Imagen img = null;
 	private boolean remarcar = false;
 	private Color c = Color.WHITE;
+	private boolean imagenDibujada = false;
 	
 	public Boton(int x,int y,int width, int height) {
 		this.x=x;
@@ -25,6 +26,7 @@ public class Boton extends JPanel {
 		img = i;
 		img.setX(x);
 		img.setY(y);
+		imagenDibujada = false;
 	}
 	
 	public void remarcar(boolean b, Color c) {
@@ -37,7 +39,7 @@ public class Boton extends JPanel {
 	}
 	
 	public void paintComponent(Graphics g) {
-		if(img != null)
+		if(img != null && !imagenDibujada)
 			img.paintComponent(g);
 		
 		if (remarcar) {
