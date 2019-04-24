@@ -88,7 +88,7 @@ public class FuenteMarkoviana {
     }
 
 
-    public double varianza(int simboloInicial){
+    public double varianza(int simboloInicial){    	
         long tiradas = 0; long sumatoriaEsperanza = 0; long sumatoriaVarianza = 0;
         double varianzaVieja = 0d; double varianza = 0d;
         int simboloAnterior = simboloInicial;

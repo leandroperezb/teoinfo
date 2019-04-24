@@ -5,13 +5,21 @@ import org.jfree.data.xy.DefaultIntervalXYDataset;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GridLayout;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Main {
+    public final static int FrameWidth = 800;
+    public final static int FrameHeight = 700;
+    
     public static DefaultIntervalXYDataset hacerDataset(Imagen imagen){
         DefaultIntervalXYDataset dataset = new DefaultIntervalXYDataset();
 
@@ -38,25 +46,23 @@ public class Main {
         return dataset;
     }
 
-    public static void mostrarHistograma(JFrame frame, DefaultIntervalXYDataset  dataset) {
-        JFreeChart histograma = ChartFactory.createHistogram("Histograma", "Intensidad de color:",
+    public static void mostrarHistograma(JFrame frame, DefaultIntervalXYDataset  dataset, int i) {
+        JFreeChart histograma = ChartFactory.createHistogram("Histograma "+i, "Intensidad de color:",
                 "Repeticiones" , dataset);
         ChartPanel chartPanel = new ChartPanel( histograma );
-        chartPanel.setPreferredSize(new java.awt.Dimension( 800 , 600 ) );
-
-        frame.add(chartPanel);
-        frame.pack();
+        frame.getContentPane().add(chartPanel);
+		frame.setVisible(true);
     }
 
     public static void main(String[] args){
         JFrame frame = new JFrame("Teoría de la información");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800,600);
-        frame.setLocation(300,80);
+        frame.setSize(FrameWidth,FrameHeight);
+        frame.setLocation(250,80);
 
         frame.setVisible(true);
-
-
+        
+      
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
         int result = fileChooser.showOpenDialog(frame);
@@ -65,26 +71,16 @@ public class Main {
             try {
                 Imagen imagen = new Imagen(ImageIO.read(selectedFile));
 
-                //Main.mostrarHistograma(frame, Main.hacerDataset(imagen.obtenerCuadrantes().get(0)));
-                Main.mostrarHistograma(frame, Main.hacerDataset(imagen));
-
                 {
-                    JFrame frame2 = new JFrame("Imagen analizada");
-                    frame2.setSize(800,600);
-                    frame2.setLocation(300,80);
-
-                    ImagePanel im = new ImagePanel();
-                    im.setBackground(imagen.imagen);
-                    frame2.getContentPane().add(im);
-
-                    frame2.setVisible(true);
+                    frame.getContentPane().add(new Screen(imagen, frame));
+                    frame.repaint();
+                    frame.setVisible(true);
                 }
 
 
                 //imagen = imagen.obtenerCuadrantes().get(2);
 
-                double[][] probabilidades = imagen.probabilidadesCondicionales();
-                int simboloInicial = imagen.getColor(0, 0);
+                
 
                 /*
                 //Imprimir las probabilidades en un archivo
@@ -100,13 +96,7 @@ public class Main {
                 }*/
 
 
-                FuenteMarkoviana fuente = new FuenteMarkoviana(probabilidades);
-                System.out.println("Esperanza: " + fuente.esperanza(simboloInicial));
-                double varianza = fuente.varianza(simboloInicial);
-                System.out.println("Varianza: " + varianza);
-                System.out.println("Desvío: " + Math.sqrt(varianza));
 
-                double[] vectorEstacionario = fuente.vectorEstacionario(simboloInicial);
 
             } catch (IOException e) {
                 e.printStackTrace();
