@@ -6,11 +6,6 @@ import org.jfree.data.xy.DefaultIntervalXYDataset;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Frame;
-import java.awt.GridLayout;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -51,7 +46,7 @@ public class Main {
                 "Repeticiones" , dataset);
         ChartPanel chartPanel = new ChartPanel( histograma );
         frame.getContentPane().add(chartPanel);
-		frame.setVisible(true);
+        frame.setVisible(true);
     }
 
     public static void main(String[] args){
@@ -76,26 +71,6 @@ public class Main {
                     frame.repaint();
                     frame.setVisible(true);
                 }
-
-
-                //imagen = imagen.obtenerCuadrantes().get(2);
-
-                
-
-                /*
-                //Imprimir las probabilidades en un archivo
-                File file = new File(System.getProperty("user.dir") + "/salida.txt");
-                final PrintStream fileout = new PrintStream(file);
-                for (int i = 0; i < probabilidades.length; i++){
-                    String salida = "";
-                    for (int j = 0; j < probabilidades.length; j++){
-                        salida += " " + probabilidades[i][j];
-                    }
-                    salida += "\n";
-                    fileout.print(salida);
-                }*/
-
-
 
 
             } catch (IOException e) {

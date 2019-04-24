@@ -1,6 +1,5 @@
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Image;
 import java.awt.Point;
 
 import javax.swing.JPanel;
@@ -35,13 +34,14 @@ public class Boton extends JPanel {
 	}
 	
 	public boolean contains(Point p) {
-		return(p.getX()<x+width/4 && p.getX()> x && p.getY() >y && p.getY()< y+height/4);
+		return(p.getX()<=x+width/4d && p.getX()> x && p.getY() >y && p.getY()<= y+height/4d);
 	}
 	
 	public void paintComponent(Graphics g) {
-		if(img != null && !imagenDibujada)
-			img.paintComponent(g);
-		
+		if(img != null && !imagenDibujada) {
+			img.paintComponent(g); imagenDibujada = true;
+		}
+
 		if (remarcar) {
 			g.setColor(c);
 			g.drawRect(x+1, y+1, width/4-3, height/4-3);

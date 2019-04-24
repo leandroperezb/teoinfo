@@ -150,6 +150,14 @@ public class Imagen extends JPanel{
     		sprnz = fuente.esperanza(getColor(0, 0));
     	return sprnz;
     }
+
+    public void resetSprnz(){
+        sprnz = Double.NEGATIVE_INFINITY;
+    }
+
+    public void resetVrnz(){
+        vrnz = Double.NEGATIVE_INFINITY;
+    }
     
     public double varianza() {
     	if (vrnz == Double.NEGATIVE_INFINITY)
