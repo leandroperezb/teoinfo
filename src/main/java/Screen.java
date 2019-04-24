@@ -11,26 +11,26 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class Screen extends JPanel implements Runnable{
-	private List<Imagen> imagenes;
+	private static List<Imagen> imagenes;
 	public static Point mseOver = new Point(0, 0);
 	public static Point mseClick = new Point(-1, -1);
 	private static Screen sc; //Workaround para entrar a la instancia desde los métodos estáticos que estaban definidos
 	private Thread thread = new Thread(this);
-	private Thread threadEsperanza = new Thread();
-	private Thread threadVarianza = new Thread();
+	private static Thread threadEsperanza = new Thread();
+	private static Thread threadVarianza = new Thread();
 	public static Semaphore sem = new Semaphore(0);
 	private static int bloqueSeleccionado = -1;
     private static List<Boton> botones = new ArrayList<>();
-    private int numIm = 0;
+    private static int numIm = 0;
     private int imagenWidth;
-    private Imagen img = null;
+    private static Imagen img = null;
     private final Color ColorMayorEntropia = Color.GREEN;
     private final Color ColorMenorEntropia = Color.BLUE;
 	private final Color ColorPromedioEntropia = Color.ORANGE;
     private Imagen imagen;
 
-    private double esperanzaAMostrar = Double.NEGATIVE_INFINITY;
-	private double varianzaAMostrar = Double.NEGATIVE_INFINITY;
+    private static double esperanzaAMostrar = Double.NEGATIVE_INFINITY;
+	private static double varianzaAMostrar = Double.NEGATIVE_INFINITY;
 
 	public Screen(Imagen imagen, JFrame f) {
 		Screen.sc = this; this.imagen = imagen;
@@ -89,51 +89,11 @@ public class Screen extends JPanel implements Runnable{
 
 	//dibujo sobre el frame
 	public synchronized void paintComponent(Graphics g) {
-		
+		g.clearRect(0, 0, getWidth(), getHeight());
 		for(int i=0;i<botones.size();i++) {
 			botones.get(i).paintComponent(g);
-			if(botones.get(i).contains(mseClick)) {
-				int imagenAnalizada = i+1;
-				JFrame frame = new JFrame("Imagen analizada "+imagenAnalizada);
-
-				if (threadEsperanza.isAlive()){
-					//Si la ejecución anterior no terminó, la aborto y reseteo por las dudas el valor
-					//que la imagen haya guardado, dado que podría haberse guardado un valor no válido
-					//producto del corte repentino
-					threadEsperanza.stop(); img.resetSprnz();
-				}
-
-				if (threadVarianza.isAlive()){
-					//Lo mismo que con el thread de la esperanza, pero para el cálculo de la varianza
-					threadVarianza.stop(); img.resetVrnz();
-				}
-
-				//Hice click en un botón, por lo que quiero calcular las estadísticas para otro bloque,
-				//con lo que reseteo los valores que está mostrando la GUI actualmente
-				esperanzaAMostrar = Double.NEGATIVE_INFINITY; varianzaAMostrar = Double.NEGATIVE_INFINITY;
-
-				img = imagenes.get(i);
-
-				threadEsperanza = new Thread(() -> {
-					Screen.sc.esperanzaAMostrar = Screen.sc.img.esperanza();
-					Screen.sem.release(); //Indico que hay una novedad para repintar el JPanel
-				});
-				threadVarianza = new Thread(() -> {
-					Screen.sc.varianzaAMostrar = Screen.sc.img.varianza();
-					Screen.sem.release(); //Indico que hay una novedad para repintar el JPanel
-				});
-				threadEsperanza.start(); threadVarianza.start();
-
-                frame.setSize(800,700);
-                frame.setLocation(350,250);
-                Main.mostrarHistograma(frame, Main.hacerDataset(img), imagenAnalizada);
-                frame.setVisible(true);
-                numIm = i+1;
-			}
 		}
-		mseClick = new Point(-1, -1);
 
-		g.clearRect(imagenWidth/4+20, 0, getWidth() - imagenWidth/4+20, getHeight()); //Solución al bug gráfico de superposición
 		if (img!= null) {
 			final int yInicial = 65;
             g.setColor(Color.black);
@@ -187,6 +147,50 @@ public class Screen extends JPanel implements Runnable{
 	public static void setMseClick(Point point) {
 		mseClick = point; Imagen imagen = Screen.sc.imagen;
 		if (mseOver.getX() < imagen.getWidth()/4d && mseOver.getY() < imagen.getHeight()/4d){
+			for(int i=0;i<botones.size();i++) {
+				if(botones.get(i).contains(mseClick)) {
+					int imagenAnalizada = i+1;
+					JFrame frame = new JFrame("Imagen analizada "+imagenAnalizada);
+
+					if (threadEsperanza.isAlive()){
+						//Si la ejecución anterior no terminó, la aborto y reseteo por las dudas el valor
+						//que la imagen haya guardado, dado que podría haberse guardado un valor no válido
+						//producto del corte repentino
+						threadEsperanza.stop(); img.resetSprnz();
+					}
+
+					if (threadVarianza.isAlive()){
+						//Lo mismo que con el thread de la esperanza, pero para el cálculo de la varianza
+						threadVarianza.stop(); img.resetVrnz();
+					}
+
+					//Hice click en un botón, por lo que quiero calcular las estadísticas para otro bloque,
+					//con lo que reseteo los valores que está mostrando la GUI actualmente
+					Screen.esperanzaAMostrar = Double.NEGATIVE_INFINITY; Screen.varianzaAMostrar = Double.NEGATIVE_INFINITY;
+
+					Screen.img = imagenes.get(i);
+
+					threadEsperanza = new Thread(() -> {
+						Screen.esperanzaAMostrar = Screen.img.esperanza();
+						Screen.sem.release(); //Indico que hay una novedad para repintar el JPanel
+					});
+					threadVarianza = new Thread(() -> {
+						Screen.varianzaAMostrar = Screen.img.varianza();
+						Screen.sem.release(); //Indico que hay una novedad para repintar el JPanel
+					});
+					threadEsperanza.start(); threadVarianza.start();
+
+	                frame.setSize(800,700);
+	                frame.setLocation(350,250);
+	                
+	                new Thread( () -> {
+	                	Main.mostrarHistograma(frame, Main.hacerDataset(img), imagenAnalizada);
+	                }).start();
+	                
+	                numIm = i+1;
+	                break;
+				}
+			}
 			Screen.sc.repaint();
 		}
 	}
