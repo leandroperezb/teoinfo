@@ -16,6 +16,7 @@ public class Main {
     public final static int FrameHeight = 700;
     public final static int FrameLocX = 250;
     public final static int FrameLocY = 80;
+    private static Screen sc = null;
     
     public static DefaultIntervalXYDataset hacerDataset(Imagen imagen){
         DefaultIntervalXYDataset dataset = new DefaultIntervalXYDataset();
@@ -51,7 +52,7 @@ public class Main {
         frame.setVisible(true);
     }
     
-    public static void abrirArchivo(JFrame frame) {
+    public static void abrirArchivo(JFrame frame) {    		
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
         int result = fileChooser.showOpenDialog(frame);
@@ -61,7 +62,14 @@ public class Main {
                 Imagen imagen = new Imagen(ImageIO.read(selectedFile));
 
                 {
-                    frame.getContentPane().add(new Screen(imagen, frame));
+                	//si ya esta creado el screen cambio la imagen y recalculo
+                	if(sc != null) {
+                		sc.reset(imagen);
+                	}
+                	else {
+                		sc = new Screen(imagen, frame);
+                		frame.getContentPane().add(sc);
+                	}
                     frame.repaint();
                     frame.setVisible(true);
                 }

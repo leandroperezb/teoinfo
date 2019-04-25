@@ -58,7 +58,7 @@ public class FuenteMarkoviana {
 
         int simbolo = simboloInicial;
 
-        while (pasos < iteraciones || !converge(vecAnterior, vector, epsilon)){
+        while (pasos < iteraciones || !converge(vecAnterior, vector, 0.000001d)){
             simbolo = darSimbolo(simbolo);
             emisiones[simbolo]++;
             pasos++;

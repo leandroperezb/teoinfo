@@ -12,28 +12,28 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class Screen extends JPanel implements Runnable{
-	private static List<Imagen> imagenes = null;
-	public static Point mseOver = new Point(0, 0);
-	public static Point mseClick = new Point(-1, -1);
-	private static Screen sc = null; //Workaround para entrar a la instancia desde los métodos estáticos que estaban definidos
-	private Thread thread = new Thread(this);
-	private static Thread threadEsperanza = new Thread();
-	private static Thread threadVarianza = new Thread();
-	public static Semaphore sem = new Semaphore(0);
-	private static int bloqueSeleccionado = -1;
-    private static List<Boton> botones = null;
+	private static List<Imagen> imagenes;
+	public static Point mseOver;
+	public static Point mseClick;
+	private static Screen sc; //Workaround para entrar a la instancia desde los métodos estáticos que estaban definidos
+	private Thread thread;
+	private static Thread threadEsperanza;
+	private static Thread threadVarianza;
+	public static Semaphore sem;
+	private static int bloqueSeleccionado;
+    private static List<Boton> botones;
 
     private static int numIm = 0;
     private int imagenWidth;
-    private static Imagen img = null;
+    private static Imagen img;
     private final Color ColorMayorEntropia = Color.GREEN;
     private final Color ColorMenorEntropia = Color.BLUE;
 	private final Color ColorPromedioEntropia = Color.ORANGE;
     private Imagen imagen;
-    private static JFrame frame = null;
+    private static JFrame frame;
 
-    private static double esperanzaAMostrar = Double.NEGATIVE_INFINITY;
-	private static double varianzaAMostrar = Double.NEGATIVE_INFINITY;
+    private static double esperanzaAMostrar;
+	private static double varianzaAMostrar;
 	
 	public final static int FrameWidth = 800;
     public final static int FrameHeight = 700;
@@ -45,7 +45,7 @@ public class Screen extends JPanel implements Runnable{
     private Font fontRefence = new Font("referencia", Font.BOLD, 16);
     private Font fontDat = new Font("datos", Font.BOLD, 12);
     
-    private static Boton cargarImagen = null;
+    private static Boton cargarImagen;
     private int botonCIX = 550;
     private int botonCIY = 450;
     private int botonCIWidth = 700;
@@ -53,21 +53,36 @@ public class Screen extends JPanel implements Runnable{
     private String botonCIName = "Nueva Imagen";
 
 	public Screen(Imagen imagen, JFrame f) {
-		Screen.sc = this; this.imagen = imagen;
+		Screen.sc = this;
 		f.addMouseListener(new KeyHandel());
 		f.addMouseMotionListener(new KeyHandel());
 		frame = f;
-
+		sem = new Semaphore(0);
+		thread = new Thread(this);
 		thread.start();
-
-		imagenWidth = imagen.getWidth();
-		botones = new ArrayList<>();
-        
-		imagenes = imagen.obtenerCuadrantes();
 		
 		cargarImagen = new Boton(botonCIX, botonCIY, botonCIWidth, botonCIHeight);
 		cargarImagen.setName(botonCIName);
+        
+		reset(imagen);
+	}
+	
+	public void reset(Imagen imagen) {
+		this.imagen = imagen;
+		imagenWidth = imagen.getWidth();
+		imagenes = imagen.obtenerCuadrantes();
+		img = null;
+		bloqueSeleccionado = -1;
+		esperanzaAMostrar = Double.NEGATIVE_INFINITY;
+		varianzaAMostrar = Double.NEGATIVE_INFINITY;
 		
+		threadEsperanza = new Thread();
+		threadVarianza = new Thread();
+		mseOver = new Point(0, 0);
+		mseClick = new Point(-1, -1);
+		
+
+		botones = new ArrayList<>();
         //inicializar botones
         for(int j=0;j<imagen.getHeight()/Imagen.TAMANIOBLOQUECUADRANTE;j++)
         	for(int i=0;i<imagen.getWidth()/Imagen.TAMANIOBLOQUECUADRANTE;i++){
@@ -182,8 +197,8 @@ public class Screen extends JPanel implements Runnable{
 		mseClick = point; Imagen imagen = Screen.sc.imagen;
 		
 		if(cargarImagen.contains(point)) {
-			frame.removeAll();
 			Main.abrirArchivo(frame);
+			frame = null;
 		}
 		
 		if (mseOver.getX() < imagen.getWidth()/Imagen.escala && mseOver.getY() < imagen.getHeight()/Imagen.escala){
