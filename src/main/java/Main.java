@@ -14,6 +14,8 @@ import java.util.Map;
 public class Main {
     public final static int FrameWidth = 800;
     public final static int FrameHeight = 700;
+    public final static int FrameLocX = 250;
+    public final static int FrameLocY = 80;
     
     public static DefaultIntervalXYDataset hacerDataset(Imagen imagen){
         DefaultIntervalXYDataset dataset = new DefaultIntervalXYDataset();
@@ -48,16 +50,8 @@ public class Main {
         frame.getContentPane().add(chartPanel);
         frame.setVisible(true);
     }
-
-    public static void main(String[] args){
-        JFrame frame = new JFrame("Teoría de la información");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(FrameWidth,FrameHeight);
-        frame.setLocation(250,80);
-
-        frame.setVisible(true);
-        
-      
+    
+    public static void abrirArchivo(JFrame frame) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
         int result = fileChooser.showOpenDialog(frame);
@@ -78,5 +72,17 @@ public class Main {
             }
             System.out.println("Selected file: " + selectedFile.getAbsolutePath());
         }
+    }
+
+    public static void main(String[] args){
+        JFrame frame = new JFrame("Teoría de la información");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(FrameWidth,FrameHeight);
+        frame.setLocation(FrameLocX, FrameLocY);
+
+        frame.setVisible(true);
+        
+        abrirArchivo(frame);
+
     }
 }

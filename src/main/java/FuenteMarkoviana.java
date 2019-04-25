@@ -1,5 +1,7 @@
 public class FuenteMarkoviana {
     protected double[][] probabilidades;
+    private final int iteraciones = 10000;
+    private final double epsilon = 0.000001d;
 
     public FuenteMarkoviana(double[][] probabilidades){
         this.probabilidades = probabilidades;
@@ -56,7 +58,7 @@ public class FuenteMarkoviana {
 
         int simbolo = simboloInicial;
 
-        while (pasos < 10000 || !converge(vecAnterior, vector, 0.000001d)){
+        while (pasos < iteraciones || !converge(vecAnterior, vector, epsilon)){
             simbolo = darSimbolo(simbolo);
             emisiones[simbolo]++;
             pasos++;
@@ -75,7 +77,7 @@ public class FuenteMarkoviana {
         double esperanzaVieja = 0d; double esperanza = 0d;
         int simboloAnterior = simboloInicial;
 
-        while (tiradas < 10000 || !converge(esperanzaVieja, esperanza, 0.00000001d)){
+        while (tiradas < iteraciones || !converge(esperanzaVieja, esperanza, 0.00000001d)){
             tiradas++;
             simboloAnterior = this.darSimbolo(simboloAnterior);
             sumatoria += simboloAnterior;
@@ -93,7 +95,7 @@ public class FuenteMarkoviana {
         double varianzaVieja = 0d; double varianza = 0d;
         int simboloAnterior = simboloInicial;
 
-        while (tiradas < 10000 || !converge(varianzaVieja, varianza, 0.00001d)){
+        while (tiradas < iteraciones || !converge(varianzaVieja, varianza, 0.00001d)){
             tiradas++;
             simboloAnterior = this.darSimbolo(simboloAnterior);
             sumatoriaEsperanza += simboloAnterior;

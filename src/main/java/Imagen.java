@@ -17,6 +17,7 @@ public class Imagen extends JPanel{
     private double sprnz = Double.NEGATIVE_INFINITY;
     private double vrnz = Double.NEGATIVE_INFINITY;
     protected final int CANTIDADCOLORES = 256;
+    public static final int escala = 4;
 
     public Imagen(BufferedImage imagen){
         if (imagen == null) throw new IllegalArgumentException("No se permite un buffer nulo");
@@ -39,10 +40,6 @@ public class Imagen extends JPanel{
         return (new Color(imagen.getRGB(x, y), true)).getRed();
     }
 
-    public void setColor(int x, int y, int color){
-        imagen.setRGB(x, y, (new Color(color, color, color)).getRGB());
-    }
-
     public List<Imagen> obtenerCuadrantes(){
         List<Imagen> lista = new ArrayList<>();
 
@@ -59,14 +56,12 @@ public class Imagen extends JPanel{
 
 
     public double[][] probabilidadesCondicionales(){
-        final int cantidadColores = 256; //Queda más lindo que el "256" metido en todos lados
-
-        double[][] probabilidades = new double[cantidadColores][cantidadColores];
-        int[] totales = new int[cantidadColores];
+        double[][] probabilidades = new double[CANTIDADCOLORES][CANTIDADCOLORES];
+        int[] totales = new int[CANTIDADCOLORES];
 
         //Inicializaciones
-        for (int i = 0; i < cantidadColores; i++) {
-            for (int j = 0; j < cantidadColores; j++) {
+        for (int i = 0; i < CANTIDADCOLORES; i++) {
+            for (int j = 0; j < CANTIDADCOLORES; j++) {
                 probabilidades[i][j] = 0d;
             }
             totales[i] = 0;
@@ -89,8 +84,8 @@ public class Imagen extends JPanel{
         }
 
         //Calcular las probabilidades de transición condicionales
-        for (int i = 0; i < cantidadColores; i++) {
-            for (int j = 0; j < cantidadColores; j++) {
+        for (int i = 0; i < CANTIDADCOLORES; i++) {
+            for (int j = 0; j < CANTIDADCOLORES; j++) {
                 if (totales[j] != 0)
                     probabilidades[i][j] /= totales[j];
             }
@@ -174,6 +169,6 @@ public class Imagen extends JPanel{
     }
 
 	public void paintComponent(Graphics g) {
-		g.drawImage(imagen, (int)x, (int)y, (int)x+imagen.getWidth()/4, (int)y+imagen.getHeight()/4, 0, 0, imagen.getWidth(), imagen.getHeight(), Color.BLACK, null);
+		g.drawImage(imagen, (int)x, (int)y, (int)x+imagen.getWidth()/escala, (int)y+imagen.getHeight()/escala, 0, 0, imagen.getWidth(), imagen.getHeight(), Color.BLACK, null);
 	}
 }
