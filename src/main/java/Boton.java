@@ -37,7 +37,7 @@ public class Boton extends JPanel {
 	}
 	
 	public boolean contains(Point p) {
-		return(p.getX()<=x+width/Imagen.ESCALA && p.getX()> x && p.getY() >y && p.getY()<= y+height/Imagen.ESCALA);
+		return(p.getX()<=x+width && p.getX()> x && p.getY() >y && p.getY()<= y+height);
 	}
 	
 	public void setName(String n) {
@@ -49,9 +49,9 @@ public class Boton extends JPanel {
 			img.paintComponent(g);
 			
 		g.setColor(Color.black);
-		if(contains(Screen.mseOver))
+		if(Screen.bloqueSeleccionado != Integer.MIN_VALUE && contains(Screen.mseOver))
 			g.setColor(Color.red);
-		g.drawRect(x, y, width/Imagen.ESCALA -1, height/Imagen.ESCALA -1);
+		g.drawRect(x, y, width -1, height -1);
 		
 		if (name != null) {
 			g.setFont(font);
@@ -60,7 +60,7 @@ public class Boton extends JPanel {
 
 		if (remarcar) {
 			g.setColor(c);
-			g.drawRect(x+1, y+1, width/Imagen.ESCALA -3, height/Imagen.ESCALA -3);
+			g.drawRect(x+1, y+1, width -3, height -3);
 		}
 	}
 }

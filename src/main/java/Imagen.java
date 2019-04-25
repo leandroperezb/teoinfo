@@ -17,7 +17,6 @@ public class Imagen extends JPanel{
     private double sprnz = Double.NEGATIVE_INFINITY;
     private double vrnz = Double.NEGATIVE_INFINITY;
     protected final int CANTIDADCOLORES = 256;
-    public static final int ESCALA = 4;
 
     public Imagen(BufferedImage imagen){
         if (imagen == null) throw new IllegalArgumentException("No se permite un buffer nulo");
@@ -169,6 +168,6 @@ public class Imagen extends JPanel{
     }
 
 	public void paintComponent(Graphics g) {
-		g.drawImage(imagen, (int)x, (int)y, (int)x+imagen.getWidth()/ ESCALA, (int)y+imagen.getHeight()/ ESCALA, 0, 0, imagen.getWidth(), imagen.getHeight(), Color.BLACK, null);
+		g.drawImage(imagen, (int)x, (int)y, (int)x+imagen.getWidth()/ Screen.ESCALA_IMAGEN, (int)y+imagen.getHeight()/ Screen.ESCALA_IMAGEN, 0, 0, imagen.getWidth(), imagen.getHeight(), Color.BLACK, null);
 	}
 }

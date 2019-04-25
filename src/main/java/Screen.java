@@ -12,15 +12,16 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class Screen extends JPanel implements Runnable{
+	public static int ESCALA_IMAGEN = 4;
 	private static List<Imagen> imagenes;
 	public static Point mseOver;
 	public static Point mseClick;
-	private static Screen sc; //Workaround para entrar a la instancia desde los métodos estáticos que estaban definidos
+	public static Screen sc = null; //Workaround para entrar a la instancia desde los métodos estáticos que estaban definidos
 	private Thread thread;
 	private static Thread threadEsperanza = new Thread();
 	private static Thread threadVarianza = new Thread();
 	public static Semaphore sem;
-	private static int bloqueSeleccionado;
+	public static int bloqueSeleccionado;
     private static List<Boton> botones;
 
     private static int numIm = 0;
@@ -48,23 +49,23 @@ public class Screen extends JPanel implements Runnable{
     private static Boton cargarImagen;
     private int botonCIX = 550;
     private int botonCIY = 450;
-    private int botonCIWidth = 700;
-    private int botonCIHeight = 140;
+    private int botonCIWidth = 175;
+    private int botonCIHeight = 35;
     private String botonCIName = "Nueva Imagen";
 
 	public Screen(Imagen imagen, JFrame f) {
 		Screen.sc = this;
-		f.addMouseListener(new KeyHandel());
-		f.addMouseMotionListener(new KeyHandel());
+
 		frame = f;
 		sem = new Semaphore(0);
 		thread = new Thread(this);
 		thread.start();
-		
-		cargarImagen = new Boton(botonCIX, botonCIY, botonCIWidth, botonCIHeight);
-		cargarImagen.setName(botonCIName);
+
         
 		reset(imagen);
+
+		f.addMouseListener(new KeyHandel());
+		f.addMouseMotionListener(new KeyHandel());
 	}
 	
 	public void reset(Imagen imagen) {
@@ -84,50 +85,7 @@ public class Screen extends JPanel implements Runnable{
 		
 
 		botones = new ArrayList<>();
-        //inicializar botones
-        for(int j=0;j<imagen.getHeight()/Imagen.TAMANIOBLOQUECUADRANTE;j++)
-        	for(int i=0;i<imagen.getWidth()/Imagen.TAMANIOBLOQUECUADRANTE;i++){
-        		botones.add(new Boton(i*(imagen.TAMANIOBLOQUECUADRANTE/Imagen.ESCALA),
-						j*(Imagen.TAMANIOBLOQUECUADRANTE/Imagen.ESCALA),Imagen.TAMANIOBLOQUECUADRANTE,
-						Imagen.TAMANIOBLOQUECUADRANTE));
-        	}
-        
-        double entropiaMax = Double.NEGATIVE_INFINITY;
-        int posEntropiaMax=0;
-        double entropiaMin = Double.POSITIVE_INFINITY;
-        int posEntropiaMin=0;
-
-        //cargar imagen en botones
-		double sumatoriaEntropia = 0d;
-        for(int i=0;i<botones.size();i++) {
-        	botones.get(i).addImage(imagenes.get(i));
-        	double entropia = imagenes.get(i).entropiaSimple();
-			sumatoriaEntropia += entropia;
-        	
-        	if(entropia < entropiaMin) {
-        		entropiaMin = entropia;
-        		posEntropiaMin = i;
-        	}
-        	
-        	if(entropia > entropiaMax) {
-        		entropiaMax= entropia;
-        		posEntropiaMax = i;
-        	}
-        }
-
-		double entropiaPromedio = sumatoriaEntropia / botones.size();
-
-        double entropiaMasCercanaAlPromedio = imagenes.stream().map(Imagen::entropiaSimple)
-				.min(Comparator.comparingDouble((i) -> Math.abs(i - entropiaPromedio))).get();
-
-		int posEntropiaPromedio = IntStream.range(0, imagenes.size())
-				.filter(i -> imagenes.get(i).entropiaSimple() == entropiaMasCercanaAlPromedio)
-				.limit(1).sum();
-
-
-		botones.get(posEntropiaPromedio).remarcar(true, ColorPromedioEntropia);
-        botones.get(posEntropiaMin).remarcar(true, ColorMenorEntropia);
-        botones.get(posEntropiaMax).remarcar(true, ColorMayorEntropia);
+		inicializarBotones();
 	}
 
 	private static void frenarThreads() {
@@ -146,8 +104,89 @@ public class Screen extends JPanel implements Runnable{
 		}
 	}
 
+	protected void recalcularEscala(){
+		double heightLibre = this.getHeight(); double widthLibre = this.getWidth() - 300d;
+		double width = imagen.getWidth(); double height = imagen.getHeight();
+		double factor = 0d;
+		if (width > widthLibre){
+			factor = widthLibre / width;
+			height = height * factor;
+			if (height > heightLibre){
+				factor *= heightLibre / height;
+			}
+		}else{
+			factor = heightLibre / height;
+			width = width * factor;
+			if (width > widthLibre){
+				factor *= widthLibre / width;
+			}
+		}
+
+		int escala = (int) Math.ceil(1/factor);
+		if (this.ESCALA_IMAGEN != escala){
+			this.ESCALA_IMAGEN = escala;
+			inicializarBotones();
+		}
+	}
+
+	private void inicializarBotones() {
+		botones.clear();
+		int contImagenes = 0;
+		for(int j = 0; j< imagen.getHeight(); j += Imagen.TAMANIOBLOQUECUADRANTE)
+			for(int i = 0; i< imagen.getWidth(); i += Imagen.TAMANIOBLOQUECUADRANTE){
+				botones.add(new Boton(i/ ESCALA_IMAGEN,
+						j/ ESCALA_IMAGEN,
+						imagenes.get(contImagenes).getWidth()/ ESCALA_IMAGEN,
+						imagenes.get(contImagenes).getHeight()/ ESCALA_IMAGEN));
+
+				contImagenes++;
+			}
+
+		double entropiaMax = Double.NEGATIVE_INFINITY;
+		int posEntropiaMax=0;
+		double entropiaMin = Double.POSITIVE_INFINITY;
+		int posEntropiaMin=0;
+
+		//cargar imagen en botones
+		double sumatoriaEntropia = 0d;
+		for(int i=0;i<botones.size();i++) {
+			botones.get(i).addImage(imagenes.get(i));
+			double entropia = imagenes.get(i).entropiaSimple();
+			sumatoriaEntropia += entropia;
+
+			if(entropia < entropiaMin) {
+				entropiaMin = entropia;
+				posEntropiaMin = i;
+			}
+
+			if(entropia > entropiaMax) {
+				entropiaMax= entropia;
+				posEntropiaMax = i;
+			}
+		}
+
+		double entropiaPromedio = sumatoriaEntropia / botones.size();
+
+		double entropiaMasCercanaAlPromedio = imagenes.stream().map(Imagen::entropiaSimple)
+				.min(Comparator.comparingDouble((i) -> Math.abs(i - entropiaPromedio))).get();
+
+		int posEntropiaPromedio = IntStream.range(0, imagenes.size())
+				.filter(i -> imagenes.get(i).entropiaSimple() == entropiaMasCercanaAlPromedio)
+				.limit(1).sum();
+
+
+		botones.get(posEntropiaPromedio).remarcar(true, ColorPromedioEntropia);
+		botones.get(posEntropiaMin).remarcar(true, ColorMenorEntropia);
+		botones.get(posEntropiaMax).remarcar(true, ColorMayorEntropia);
+
+		cargarImagen = new Boton(imagenWidth / ESCALA_IMAGEN + espaceX, botonCIY, botonCIWidth, botonCIHeight);
+		cargarImagen.setName(botonCIName);
+	}
+
 	//dibujo sobre el frame
 	public synchronized void paintComponent(Graphics g) {
+		recalcularEscala();
+
 		g.clearRect(0, 0, getWidth(), getHeight());
 		for(int i=0;i<botones.size();i++) {
 			botones.get(i).paintComponent(g);
@@ -160,55 +199,56 @@ public class Screen extends JPanel implements Runnable{
 			final int yInicial = 100;
             g.setColor(Color.black);
             g.setFont(fontRefence);
-			g.drawString(" Datos de imagen: "+numIm , imagenWidth/Imagen.ESCALA +espaceX, yInicial);
+			g.drawString(" Datos de imagen: "+numIm , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial);
 
 			g.setFont(fontDat);
             if (esperanzaAMostrar == Double.NEGATIVE_INFINITY){
-				g.drawString(" Esperanza: calculando..." , imagenWidth/Imagen.ESCALA +espaceX, yInicial+espaceY*2);
+				g.drawString(" Esperanza: calculando..." , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial+espaceY*2);
 			}else {
-				g.drawString(" Esperanza: " + esperanzaAMostrar, imagenWidth /Imagen.ESCALA + espaceX, yInicial + espaceY*2);
+				g.drawString(" Esperanza: " + esperanzaAMostrar, imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*2);
 			}
 
             if (varianzaAMostrar == Double.NEGATIVE_INFINITY){
-				g.drawString(" Varianza: calculando...", imagenWidth /Imagen.ESCALA + espaceX, yInicial + espaceY*3);
-				g.drawString(" Desvío: calculando... ", imagenWidth /Imagen.ESCALA + espaceX, yInicial + espaceY*4);
+				g.drawString(" Varianza: calculando...", imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*3);
+				g.drawString(" Desvío: calculando... ", imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*4);
 			}else {
-				g.drawString(" Varianza: " + varianzaAMostrar, imagenWidth /Imagen.ESCALA + espaceX, yInicial + espaceY*3);
-				g.drawString(" Desvío: " + Math.sqrt(varianzaAMostrar), imagenWidth /Imagen.ESCALA + espaceX, yInicial + espaceY*4);
+				g.drawString(" Varianza: " + varianzaAMostrar, imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*3);
+				g.drawString(" Desvío: " + Math.sqrt(varianzaAMostrar), imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*4);
 			}
-			g.drawString(" Entropía sin memoria: "+img.entropiaSimple() , imagenWidth/Imagen.ESCALA +espaceX, yInicial+espaceY*5);
+			g.drawString(" Entropía sin memoria: "+img.entropiaSimple() , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial+espaceY*5);
 		}
 		
 		g.setFont(fontRefence);
 		g.setColor(ColorMayorEntropia);
-		g.drawString(" *Mayor Entropía* ", imagenWidth/Imagen.ESCALA +espaceX, espaceY);
+		g.drawString(" *Mayor Entropía* ", imagenWidth/ ESCALA_IMAGEN +espaceX, espaceY);
 		g.setColor(ColorMenorEntropia);
-		g.drawString(" *Menor Entropía* ", imagenWidth/Imagen.ESCALA +espaceX, espaceY*2);
+		g.drawString(" *Menor Entropía* ", imagenWidth/ ESCALA_IMAGEN +espaceX, espaceY*2);
 		g.setColor(ColorPromedioEntropia);
-		g.drawString(" *Entropía promedio* ", imagenWidth/Imagen.ESCALA +espaceX, espaceY*3);
+		g.drawString(" *Entropía promedio* ", imagenWidth/ ESCALA_IMAGEN +espaceX, espaceY*3);
 	}
 
 
 	public static void setOverMse(Point point) {
 		if (point == null) return;
 		mseOver = point;
-		Imagen imagen = Screen.sc.imagen;
 
-		if(cargarImagen != null && cargarImagen.contains(point) && bloqueSeleccionado != -1) {
-			bloqueSeleccionado = -1;
-			Screen.sc.repaint();
+		if(cargarImagen != null && cargarImagen.contains(point)) {
+			if (bloqueSeleccionado != -1) {
+				bloqueSeleccionado = -1;
+				Screen.sc.repaint();
+			}
 			return;
 		}
 
-		//Si el mouse entra a un bloque que no era el que se encontraba seleccionado anteriormente, redibujar
-		if (mseOver.getX() < imagen.getWidth()/Imagen.ESCALA && mseOver.getY() < imagen.getHeight()/Imagen.ESCALA){
-			int cantCol = imagen.getWidth() / Imagen.TAMANIOBLOQUECUADRANTE;
-			int y = (int) Math.ceil(mseOver.getY() / (Imagen.TAMANIOBLOQUECUADRANTE/Imagen.ESCALA));
-			int x = (int) Math.ceil(mseOver.getX() / (Imagen.TAMANIOBLOQUECUADRANTE/Imagen.ESCALA));
+		Imagen imagen = Screen.sc.imagen;
+		if (imagen == null) return;
 
-			int bloque = (y-1)*cantCol+x-1;
-			if (bloque != bloqueSeleccionado){
-				bloqueSeleccionado = bloque; Screen.sc.repaint();
+		//Si el mouse entra a un bloque que no era el que se encontraba seleccionado anteriormente, redibujar
+		if (mseOver.getX() < imagen.getWidth()/ ESCALA_IMAGEN && mseOver.getY() < imagen.getHeight()/ ESCALA_IMAGEN){
+			for(int i=0;i<botones.size();i++) {
+				if (botones.get(i).contains(mseOver) && i != bloqueSeleccionado) {
+					bloqueSeleccionado = i; Screen.sc.repaint();
+				}
 			}
 		}else{
 			if (bloqueSeleccionado != Integer.MIN_VALUE){
@@ -227,7 +267,7 @@ public class Screen extends JPanel implements Runnable{
 			return;
 		}
 		
-		if (mseClick.getX() < imagen.getWidth()/Imagen.ESCALA && mseClick.getY() < imagen.getHeight()/Imagen.ESCALA){
+		if (mseClick.getX() < imagen.getWidth()/ ESCALA_IMAGEN && mseClick.getY() < imagen.getHeight()/ ESCALA_IMAGEN){
 			for(int i=0;i<botones.size();i++) {
 				if(botones.get(i).contains(mseClick)) {
 					int imagenAnalizada = i+1;

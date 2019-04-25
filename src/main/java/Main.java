@@ -15,7 +15,6 @@ public class Main {
     public final static int FRAME_HEIGHT = 700;
     public final static int FRAME_LOC_X = 250;
     public final static int FRAME_LOC_Y = 80;
-    private static Screen sc = null;
     
     public static DefaultIntervalXYDataset hacerDataset(Imagen imagen){
         DefaultIntervalXYDataset dataset = new DefaultIntervalXYDataset();
@@ -62,12 +61,12 @@ public class Main {
 
                 {
                 	//si ya esta creado el screen cambio la imagen y recalculo
-                	if(sc != null) {
-                		sc.reset(imagen);
+                	if(Screen.sc != null) {
+                		Screen.sc.reset(imagen);
                 	}
                 	else {
-                		sc = new Screen(imagen, frame);
-                		frame.getContentPane().add(sc);
+                		Screen.sc = new Screen(imagen, frame);
+                		frame.getContentPane().add(Screen.sc);
                 	}
                     frame.repaint();
                     frame.setVisible(true);
