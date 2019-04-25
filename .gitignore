@@ -29,6 +29,7 @@ hs_err_pid*
 /classes/
 .settings
 /gradle/
+/.metadata/
 .classpath
 .project
 gradlew

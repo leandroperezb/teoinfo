@@ -7,15 +7,14 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Main {
-    public final static int FrameWidth = 800;
-    public final static int FrameHeight = 700;
-    public final static int FrameLocX = 250;
-    public final static int FrameLocY = 80;
+    public final static int FRAME_WIDTH = 800;
+    public final static int FRAME_HEIGHT = 700;
+    public final static int FRAME_LOC_X = 250;
+    public final static int FRAME_LOC_Y = 80;
     private static Screen sc = null;
     
     public static DefaultIntervalXYDataset hacerDataset(Imagen imagen){
@@ -75,7 +74,7 @@ public class Main {
                 }
 
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             System.out.println("Selected file: " + selectedFile.getAbsolutePath());
@@ -85,8 +84,8 @@ public class Main {
     public static void main(String[] args){
         JFrame frame = new JFrame("Teoría de la información");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(FrameWidth,FrameHeight);
-        frame.setLocation(FrameLocX, FrameLocY);
+        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
 
         frame.setVisible(true);
         

@@ -17,8 +17,8 @@ public class Screen extends JPanel implements Runnable{
 	public static Point mseClick;
 	private static Screen sc; //Workaround para entrar a la instancia desde los métodos estáticos que estaban definidos
 	private Thread thread;
-	private static Thread threadEsperanza;
-	private static Thread threadVarianza;
+	private static Thread threadEsperanza = new Thread();
+	private static Thread threadVarianza = new Thread();
 	public static Semaphore sem;
 	private static int bloqueSeleccionado;
     private static List<Boton> botones;
@@ -35,10 +35,10 @@ public class Screen extends JPanel implements Runnable{
     private static double esperanzaAMostrar;
 	private static double varianzaAMostrar;
 	
-	public final static int FrameWidth = 800;
-    public final static int FrameHeight = 700;
-    public final static int FrameLocX = 350;
-    public final static int FrameLocY = 250;
+	public final static int FRAME_WIDTH = 800;
+    public final static int FRAME_HEIGHT = 700;
+    public final static int FRAME_LOC_X = 350;
+    public final static int FRAME_LOC_Y = 250;
     
     private int espaceX = 20;
     private int espaceY = 20;
@@ -68,16 +68,17 @@ public class Screen extends JPanel implements Runnable{
 	}
 	
 	public void reset(Imagen imagen) {
+		frenarThreads();
+
 		this.imagen = imagen;
 		imagenWidth = imagen.getWidth();
 		imagenes = imagen.obtenerCuadrantes();
 		img = null;
-		bloqueSeleccionado = -1;
+		bloqueSeleccionado = Integer.MIN_VALUE;
 		esperanzaAMostrar = Double.NEGATIVE_INFINITY;
 		varianzaAMostrar = Double.NEGATIVE_INFINITY;
-		
-		threadEsperanza = new Thread();
-		threadVarianza = new Thread();
+
+
 		mseOver = new Point(0, 0);
 		mseClick = new Point(-1, -1);
 		
@@ -86,7 +87,9 @@ public class Screen extends JPanel implements Runnable{
         //inicializar botones
         for(int j=0;j<imagen.getHeight()/Imagen.TAMANIOBLOQUECUADRANTE;j++)
         	for(int i=0;i<imagen.getWidth()/Imagen.TAMANIOBLOQUECUADRANTE;i++){
-        		botones.add(new Boton(i*(imagen.TAMANIOBLOQUECUADRANTE/Imagen.escala),j*(Imagen.TAMANIOBLOQUECUADRANTE/Imagen.escala),Imagen.TAMANIOBLOQUECUADRANTE,Imagen.TAMANIOBLOQUECUADRANTE));
+        		botones.add(new Boton(i*(imagen.TAMANIOBLOQUECUADRANTE/Imagen.ESCALA),
+						j*(Imagen.TAMANIOBLOQUECUADRANTE/Imagen.ESCALA),Imagen.TAMANIOBLOQUECUADRANTE,
+						Imagen.TAMANIOBLOQUECUADRANTE));
         	}
         
         double entropiaMax = Double.NEGATIVE_INFINITY;
@@ -127,6 +130,22 @@ public class Screen extends JPanel implements Runnable{
         botones.get(posEntropiaMax).remarcar(true, ColorMayorEntropia);
 	}
 
+	private static void frenarThreads() {
+		if (threadEsperanza.isAlive()) {
+			//Si la ejecución anterior no terminó, la aborto y reseteo por las dudas el valor
+			//que la imagen haya guardado, dado que podría haberse guardado un valor no válido
+			//producto del corte repentino
+			threadEsperanza.stop();
+			img.resetSprnz();
+		}
+
+		if (threadVarianza.isAlive()) {
+			//Lo mismo que con el thread de la esperanza, pero para el cálculo de la varianza
+			threadVarianza.stop();
+			img.resetVrnz();
+		}
+	}
+
 	//dibujo sobre el frame
 	public synchronized void paintComponent(Graphics g) {
 		g.clearRect(0, 0, getWidth(), getHeight());
@@ -141,83 +160,80 @@ public class Screen extends JPanel implements Runnable{
 			final int yInicial = 100;
             g.setColor(Color.black);
             g.setFont(fontRefence);
-			g.drawString(" Datos de imagen: "+numIm , imagenWidth/Imagen.escala+espaceX, yInicial);
+			g.drawString(" Datos de imagen: "+numIm , imagenWidth/Imagen.ESCALA +espaceX, yInicial);
 
 			g.setFont(fontDat);
             if (esperanzaAMostrar == Double.NEGATIVE_INFINITY){
-				g.drawString(" Esperanza: calculando..." , imagenWidth/Imagen.escala+espaceX, yInicial+espaceY*2);
+				g.drawString(" Esperanza: calculando..." , imagenWidth/Imagen.ESCALA +espaceX, yInicial+espaceY*2);
 			}else {
-				g.drawString(" Esperanza: " + esperanzaAMostrar, imagenWidth /Imagen.escala + espaceX, yInicial + espaceY*2);
+				g.drawString(" Esperanza: " + esperanzaAMostrar, imagenWidth /Imagen.ESCALA + espaceX, yInicial + espaceY*2);
 			}
 
             if (varianzaAMostrar == Double.NEGATIVE_INFINITY){
-				g.drawString(" Varianza: calculando...", imagenWidth /Imagen.escala + espaceX, yInicial + espaceY*3);
-				g.drawString(" Desvío: calculando... ", imagenWidth /Imagen.escala + espaceX, yInicial + espaceY*4);
+				g.drawString(" Varianza: calculando...", imagenWidth /Imagen.ESCALA + espaceX, yInicial + espaceY*3);
+				g.drawString(" Desvío: calculando... ", imagenWidth /Imagen.ESCALA + espaceX, yInicial + espaceY*4);
 			}else {
-				g.drawString(" Varianza: " + varianzaAMostrar, imagenWidth /Imagen.escala + espaceX, yInicial + espaceY*3);
-				g.drawString(" Desvío: " + Math.sqrt(varianzaAMostrar), imagenWidth /Imagen.escala + espaceX, yInicial + espaceY*4);
+				g.drawString(" Varianza: " + varianzaAMostrar, imagenWidth /Imagen.ESCALA + espaceX, yInicial + espaceY*3);
+				g.drawString(" Desvío: " + Math.sqrt(varianzaAMostrar), imagenWidth /Imagen.ESCALA + espaceX, yInicial + espaceY*4);
 			}
-			g.drawString(" Entropía sin memoria: "+img.entropiaSimple() , imagenWidth/Imagen.escala+espaceX, yInicial+espaceY*5);
+			g.drawString(" Entropía sin memoria: "+img.entropiaSimple() , imagenWidth/Imagen.ESCALA +espaceX, yInicial+espaceY*5);
 		}
 		
 		g.setFont(fontRefence);
 		g.setColor(ColorMayorEntropia);
-		g.drawString(" *Mayor Entropía* ", imagenWidth/Imagen.escala+espaceX, espaceY);
+		g.drawString(" *Mayor Entropía* ", imagenWidth/Imagen.ESCALA +espaceX, espaceY);
 		g.setColor(ColorMenorEntropia);
-		g.drawString(" *Menor Entropía* ", imagenWidth/Imagen.escala+espaceX, espaceY*2);
+		g.drawString(" *Menor Entropía* ", imagenWidth/Imagen.ESCALA +espaceX, espaceY*2);
 		g.setColor(ColorPromedioEntropia);
-		g.drawString(" *Entropía promedio* ", imagenWidth/Imagen.escala+espaceX, espaceY*3);		
+		g.drawString(" *Entropía promedio* ", imagenWidth/Imagen.ESCALA +espaceX, espaceY*3);
 	}
 
 
 	public static void setOverMse(Point point) {
+		if (point == null) return;
 		mseOver = point;
 		Imagen imagen = Screen.sc.imagen;
-		
-		Point p = point;
-		
-		/*if (cargarImagen.contains(p)) {
+
+		if(cargarImagen != null && cargarImagen.contains(point) && bloqueSeleccionado != -1) {
+			bloqueSeleccionado = -1;
 			Screen.sc.repaint();
-		}*/
+			return;
+		}
 
 		//Si el mouse entra a un bloque que no era el que se encontraba seleccionado anteriormente, redibujar
-		if (mseOver.getX() < imagen.getWidth()/Imagen.escala && mseOver.getY() < imagen.getHeight()/Imagen.escala){
+		if (mseOver.getX() < imagen.getWidth()/Imagen.ESCALA && mseOver.getY() < imagen.getHeight()/Imagen.ESCALA){
 			int cantCol = imagen.getWidth() / Imagen.TAMANIOBLOQUECUADRANTE;
-			int y = (int) Math.ceil(mseOver.getY() / (Imagen.TAMANIOBLOQUECUADRANTE/Imagen.escala));
-			int x = (int) Math.ceil(mseOver.getX() / (Imagen.TAMANIOBLOQUECUADRANTE/Imagen.escala));
+			int y = (int) Math.ceil(mseOver.getY() / (Imagen.TAMANIOBLOQUECUADRANTE/Imagen.ESCALA));
+			int x = (int) Math.ceil(mseOver.getX() / (Imagen.TAMANIOBLOQUECUADRANTE/Imagen.ESCALA));
 
 			int bloque = (y-1)*cantCol+x-1;
 			if (bloque != bloqueSeleccionado){
 				bloqueSeleccionado = bloque; Screen.sc.repaint();
 			}
+		}else{
+			if (bloqueSeleccionado != Integer.MIN_VALUE){
+				bloqueSeleccionado = Integer.MIN_VALUE;
+				Screen.sc.repaint();
+			}
 		}
 	}
 
 	public static void setMseClick(Point point) {
+		if (point == null) return;
 		mseClick = point; Imagen imagen = Screen.sc.imagen;
-		
-		if(cargarImagen.contains(point)) {
+
+		if(cargarImagen != null && cargarImagen.contains(point)) {
 			Main.abrirArchivo(frame);
-			frame = null;
+			return;
 		}
 		
-		if (mseOver.getX() < imagen.getWidth()/Imagen.escala && mseOver.getY() < imagen.getHeight()/Imagen.escala){
+		if (mseClick.getX() < imagen.getWidth()/Imagen.ESCALA && mseClick.getY() < imagen.getHeight()/Imagen.ESCALA){
 			for(int i=0;i<botones.size();i++) {
 				if(botones.get(i).contains(mseClick)) {
 					int imagenAnalizada = i+1;
 					JFrame frame = new JFrame("Imagen analizada "+imagenAnalizada);
 
-					if (threadEsperanza.isAlive()){
-						//Si la ejecución anterior no terminó, la aborto y reseteo por las dudas el valor
-						//que la imagen haya guardado, dado que podría haberse guardado un valor no válido
-						//producto del corte repentino
-						threadEsperanza.stop(); img.resetSprnz();
-					}
-
-					if (threadVarianza.isAlive()){
-						//Lo mismo que con el thread de la esperanza, pero para el cálculo de la varianza
-						threadVarianza.stop(); img.resetVrnz();
-					}
+					frenarThreads();
 
 					//Hice click en un botón, por lo que quiero calcular las estadísticas para otro bloque,
 					//con lo que reseteo los valores que está mostrando la GUI actualmente
@@ -235,8 +251,8 @@ public class Screen extends JPanel implements Runnable{
 					});
 					threadEsperanza.start(); threadVarianza.start();
 
-	                frame.setSize(FrameWidth,FrameHeight);
-	                frame.setLocation(FrameLocX,FrameLocY);
+	                frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+	                frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
 	                
 	                new Thread( () -> {
 	                	Main.mostrarHistograma(frame, Main.hacerDataset(img), imagenAnalizada);

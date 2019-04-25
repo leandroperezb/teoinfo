@@ -2,7 +2,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Point;
-import java.awt.Rectangle;
 
 import javax.swing.JPanel;
 
@@ -38,7 +37,7 @@ public class Boton extends JPanel {
 	}
 	
 	public boolean contains(Point p) {
-		return(p.getX()<=x+width/Imagen.escala && p.getX()> x && p.getY() >y && p.getY()<= y+height/Imagen.escala);
+		return(p.getX()<=x+width/Imagen.ESCALA && p.getX()> x && p.getY() >y && p.getY()<= y+height/Imagen.ESCALA);
 	}
 	
 	public void setName(String n) {
@@ -52,7 +51,7 @@ public class Boton extends JPanel {
 		g.setColor(Color.black);
 		if(contains(Screen.mseOver))
 			g.setColor(Color.red);
-		g.drawRect(x, y, width/Imagen.escala-1, height/Imagen.escala-1);
+		g.drawRect(x, y, width/Imagen.ESCALA -1, height/Imagen.ESCALA -1);
 		
 		if (name != null) {
 			g.setFont(font);
@@ -61,7 +60,7 @@ public class Boton extends JPanel {
 
 		if (remarcar) {
 			g.setColor(c);
-			g.drawRect(x+1, y+1, width/Imagen.escala-3, height/Imagen.escala-3);
+			g.drawRect(x+1, y+1, width/Imagen.ESCALA -3, height/Imagen.ESCALA -3);
 		}
 	}
 }
