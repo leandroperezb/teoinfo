@@ -1,4 +1,6 @@
 import javax.imageio.ImageIO;
+import javax.swing.JPanel;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -6,14 +8,23 @@ import java.io.IOException;
 import java.util.*;
 import java.util.List;
 
-public class Imagen {
-    protected BufferedImage imagen;
+public class Imagen extends JPanel{
+    public BufferedImage imagen;
     public static final int TAMANIOBLOQUECUADRANTE = 500;
+    private double x=0;
+    private double y=0;
+    private FuenteMarkoviana fuente;
+    private double sprnz = Double.NEGATIVE_INFINITY;
+    private double vrnz = Double.NEGATIVE_INFINITY;
     protected final int CANTIDADCOLORES = 256;
 
     public Imagen(BufferedImage imagen){
         if (imagen == null) throw new IllegalArgumentException("No se permite un buffer nulo");
         this.imagen = imagen;
+		
+		double[][] probabilidades = probabilidadesCondicionales();
+        fuente = new FuenteMarkoviana(probabilidades);
+
     }
 
     public int getWidth(){
@@ -26,10 +37,6 @@ public class Imagen {
 
     public int getColor(int x, int y){
         return (new Color(imagen.getRGB(x, y), true)).getRed();
-    }
-
-    public void setColor(int x, int y, int color){
-        imagen.setRGB(x, y, (new Color(color, color, color)).getRGB());
     }
 
     public List<Imagen> obtenerCuadrantes(){
@@ -85,8 +92,7 @@ public class Imagen {
 
         return probabilidades;
     }
-
-
+    
     public double[] probabilidadesSimples(){
         double[] probabilidades = new double[CANTIDADCOLORES];
         int total = 0;
@@ -132,5 +138,36 @@ public class Imagen {
     public void guardarComoArchivo(String ruta) throws IOException {
         ImageIO.write(imagen, "bmp", new File(ruta));
     }
+    
+    public double esperanza() {
+    	if (sprnz == Double.NEGATIVE_INFINITY)
+    		sprnz = fuente.esperanza(getColor(0, 0));
+    	return sprnz;
+    }
 
+    public void resetSprnz(){
+        sprnz = Double.NEGATIVE_INFINITY;
+    }
+
+    public void resetVrnz(){
+        vrnz = Double.NEGATIVE_INFINITY;
+    }
+    
+    public double varianza() {
+    	if (vrnz == Double.NEGATIVE_INFINITY)
+    		vrnz = fuente.varianza(getColor(0, 0));
+    	return vrnz;
+    }
+    
+    public void setX(double x) {
+    	this.x = x;
+    }
+    
+    public void setY(double y) {
+    	this.y = y;
+    }
+
+	public void paintComponent(Graphics g) {
+		g.drawImage(imagen, (int)x, (int)y, (int)x+imagen.getWidth()/ Screen.ESCALA_IMAGEN, (int)y+imagen.getHeight()/ Screen.ESCALA_IMAGEN, 0, 0, imagen.getWidth(), imagen.getHeight(), Color.BLACK, null);
+	}
 }
