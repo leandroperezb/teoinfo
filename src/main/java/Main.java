@@ -147,20 +147,23 @@ public class Main {
             boton.addActionListener( (evt) -> {
                     try{
                         FuenteMarkoviana.epsilonVarianza = Math.abs(epsilonVarianza.getDoubleValue());
-                        FuenteMarkoviana.epsilonEsperanza = Math.abs(epsilonEsperanza.getDoubleValue());
-
-                        epsilonVarianza.setValue(FuenteMarkoviana.epsilonVarianza);
-                        epsilonEsperanza.setValue(FuenteMarkoviana.epsilonEsperanza);
-
-                        actualEsperanza.setText("(Valor actual: " + FuenteMarkoviana.epsilonEsperanza + ")");
-                        actualVarianza.setText("(Valor actual: " + FuenteMarkoviana.epsilonVarianza + ")");
-
-                        panelEpsilons.repaint();
-
-                        Screen.sc.onNuevosEpsilons();
                     }catch (ParseException e) {
-                        e.printStackTrace();
+                        FuenteMarkoviana.epsilonVarianza = 0d;
+                    }finally {
+                        epsilonVarianza.setValue(FuenteMarkoviana.epsilonVarianza);
+                        actualVarianza.setText("(Valor actual: " + FuenteMarkoviana.epsilonVarianza + ")");
                     }
+                    try{
+                        FuenteMarkoviana.epsilonEsperanza = Math.abs(epsilonEsperanza.getDoubleValue());
+                    }catch (ParseException e){
+                        FuenteMarkoviana.epsilonEsperanza = 0d;
+                    }finally {
+                        epsilonEsperanza.setValue(FuenteMarkoviana.epsilonEsperanza);
+                        actualEsperanza.setText("(Valor actual: " + FuenteMarkoviana.epsilonEsperanza + ")");
+                    }
+
+                    panelEpsilons.repaint();
+                    Screen.sc.onNuevosEpsilons();
                 }
             );
         constraints.gridy = 2;

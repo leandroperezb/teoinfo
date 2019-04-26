@@ -54,6 +54,7 @@ public class Screen extends JPanel implements Runnable{
 
 	public Screen(Imagen imagen, JFrame f) {
 		Screen.sc = this;
+		this.setOpaque(false);
 
 		frame = f;
 		sem = new Semaphore(0);
@@ -195,15 +196,14 @@ public class Screen extends JPanel implements Runnable{
 
 	//dibujo sobre el frame
 	public synchronized void paintComponent(Graphics g) {
+		super.paintComponent(g);
 		recalcularEscala();
 
-		g.clearRect(0, 0, getWidth(), getHeight());
 		g.setColor(Color.GRAY); g.fillRect(getWidth()-6, 0, 2, getHeight());
 		for(int i=0;i<botones.size();i++) {
 			botones.get(i).paintComponent(g);
 		}
-		
-		cargarImagen.setBackground(Color.GREEN);
+
 		cargarImagen.paintComponent(g);
 
 		if (img!= null) {
