@@ -12,16 +12,16 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class Screen extends JPanel implements Runnable{
-	public static int ESCALA_IMAGEN = 4;
+	static int ESCALA_IMAGEN = 4;
 	private static List<Imagen> imagenes;
-	public static Point mseOver;
-	public static Point mseClick;
-	public static Screen sc = null; //Workaround para entrar a la instancia desde los métodos estáticos que estaban definidos
+	static Point mseOver;
+	private static Point mseClick;
+	static Screen sc = null; //Workaround para entrar a la instancia desde los métodos estáticos que estaban definidos
 	private Thread thread;
 	private static Thread threadEsperanza = new Thread();
 	private static Thread threadVarianza = new Thread();
-	public static Semaphore sem;
-	public static int bloqueSeleccionado;
+	private static Semaphore sem;
+	static int bloqueSeleccionado;
     private static List<Boton> botones;
 
     private static int numIm = 0;
@@ -36,10 +36,10 @@ public class Screen extends JPanel implements Runnable{
     private static double esperanzaAMostrar;
 	private static double varianzaAMostrar;
 	
-	public final static int FRAME_WIDTH = 800;
-    public final static int FRAME_HEIGHT = 700;
-    public final static int FRAME_LOC_X = 500;
-    public final static int FRAME_LOC_Y = 30;
+	private final static int FRAME_WIDTH = 800;
+    private final static int FRAME_HEIGHT = 700;
+    private final static int FRAME_LOC_X = 500;
+    private final static int FRAME_LOC_Y = 30;
     
     private int espaceX = 20;
     private int espaceY = 20;
@@ -308,7 +308,7 @@ public class Screen extends JPanel implements Runnable{
 	                frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
 	                
 	                new Thread( () -> {
-	                	Main.mostrarHistograma(frame, Main.hacerDataset(img), imagenAnalizada);
+	                	Main.mostrarHistograma(frame, img.hacerDatasetRepeticiones(), imagenAnalizada);
 	                }).start();
 	                
 	                numIm = i+1;

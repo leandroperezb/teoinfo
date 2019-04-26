@@ -11,8 +11,7 @@ import java.awt.*;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.text.ParseException;
-import java.util.HashMap;
-import java.util.Map;
+
 
 public class Main {
     private final static int FRAME_WIDTH = 930;
@@ -24,32 +23,6 @@ public class Main {
     static NumericTextField epsilonVarianza = null;
     static JLabel actualEsperanza;
     static JLabel actualVarianza;
-    
-    static DefaultIntervalXYDataset hacerDataset(Imagen imagen){
-        DefaultIntervalXYDataset dataset = new DefaultIntervalXYDataset();
-
-        Map<Integer, Integer> repeticiones = new HashMap<>();
-
-        //Anotar colores existentes y contar las repeticiones (cantidad de apariciones)
-        for (int y = 0; y < imagen.getHeight(); y++){
-            for (int x = 0; x < imagen.getWidth(); x++){
-                int color = imagen.getColor(x, y);
-                if (repeticiones.containsKey(color)) {
-                    repeticiones.put(color, repeticiones.get(color) + 1);
-                }else{
-                    repeticiones.put(color, 1);
-                }
-            }
-        }
-
-        //Cargar en el dataset los valores obtenidos
-        for(Integer i: repeticiones.keySet()) {
-            dataset.addSeries(i,
-                    new double[][]{{i}, {i - 0.5d}, {i + 0.5d}, {repeticiones.get(i)}, {repeticiones.get(i)}, {repeticiones.get(i)}});
-        }
-
-        return dataset;
-    }
 
     static void mostrarHistograma(JFrame frame, DefaultIntervalXYDataset dataset, int i) {
         JFreeChart histograma = ChartFactory.createHistogram("Histograma "+i, "Intensidad de color:",
@@ -173,8 +146,11 @@ public class Main {
             //Al clickear el botón, actualizar los épsilons
             boton.addActionListener( (evt) -> {
                     try{
-                        FuenteMarkoviana.epsilonVarianza = epsilonVarianza.getDoubleValue();
-                        FuenteMarkoviana.epsilonEsperanza = epsilonEsperanza.getDoubleValue();
+                        FuenteMarkoviana.epsilonVarianza = Math.abs(epsilonVarianza.getDoubleValue());
+                        FuenteMarkoviana.epsilonEsperanza = Math.abs(epsilonEsperanza.getDoubleValue());
+
+                        epsilonVarianza.setValue(FuenteMarkoviana.epsilonVarianza);
+                        epsilonEsperanza.setValue(FuenteMarkoviana.epsilonEsperanza);
 
                         actualEsperanza.setText("(Valor actual: " + FuenteMarkoviana.epsilonEsperanza + ")");
                         actualVarianza.setText("(Valor actual: " + FuenteMarkoviana.epsilonVarianza + ")");

@@ -1,3 +1,5 @@
+import org.jfree.data.xy.DefaultIntervalXYDataset;
+
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
@@ -25,6 +27,32 @@ public class Imagen extends JPanel{
 		double[][] probabilidades = probabilidadesCondicionales();
         fuente = new FuenteMarkoviana(probabilidades);
 
+    }
+
+    DefaultIntervalXYDataset hacerDatasetRepeticiones(){
+        DefaultIntervalXYDataset dataset = new DefaultIntervalXYDataset();
+
+        Map<Integer, Integer> repeticiones = new HashMap<>();
+
+        //Anotar colores existentes y contar las repeticiones (cantidad de apariciones)
+        for (int y = 0; y < this.getHeight(); y++){
+            for (int x = 0; x < this.getWidth(); x++){
+                int color = this.getColor(x, y);
+                if (repeticiones.containsKey(color)) {
+                    repeticiones.put(color, repeticiones.get(color) + 1);
+                }else{
+                    repeticiones.put(color, 1);
+                }
+            }
+        }
+
+        //Cargar en el dataset los valores obtenidos
+        for(Integer i: repeticiones.keySet()) {
+            dataset.addSeries(i,
+                    new double[][]{{i}, {i - 0.5d}, {i + 0.5d}, {repeticiones.get(i)}, {repeticiones.get(i)}, {repeticiones.get(i)}});
+        }
+
+        return dataset;
     }
 
     public int getWidth(){
