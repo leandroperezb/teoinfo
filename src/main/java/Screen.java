@@ -38,8 +38,8 @@ public class Screen extends JPanel implements Runnable{
 	
 	public final static int FRAME_WIDTH = 800;
     public final static int FRAME_HEIGHT = 700;
-    public final static int FRAME_LOC_X = 350;
-    public final static int FRAME_LOC_Y = 250;
+    public final static int FRAME_LOC_X = 500;
+    public final static int FRAME_LOC_Y = 30;
     
     private int espaceX = 20;
     private int espaceY = 20;
@@ -47,7 +47,6 @@ public class Screen extends JPanel implements Runnable{
     private Font fontDat = new Font("datos", Font.BOLD, 12);
     
     private static Boton cargarImagen;
-    private int botonCIX = 550;
     private int botonCIY = 450;
     private int botonCIWidth = 175;
     private int botonCIHeight = 35;
@@ -66,6 +65,17 @@ public class Screen extends JPanel implements Runnable{
 
 		f.addMouseListener(new KeyHandel());
 		f.addMouseMotionListener(new KeyHandel());
+	}
+
+	void onNuevosEpsilons(){
+		frenarThreads();
+		for (Imagen i : imagenes){
+			i.resetVrnz(); i.resetSprnz();
+		}
+		esperanzaAMostrar = Double.NEGATIVE_INFINITY;
+		varianzaAMostrar = Double.NEGATIVE_INFINITY;
+		img = null;
+		repaint();
 	}
 	
 	public void reset(Imagen imagen) {
@@ -123,8 +133,8 @@ public class Screen extends JPanel implements Runnable{
 		}
 
 		int escala = (int) Math.ceil(1/factor);
-		if (this.ESCALA_IMAGEN != escala){
-			this.ESCALA_IMAGEN = escala;
+		if (ESCALA_IMAGEN != escala){
+			ESCALA_IMAGEN = escala;
 			inicializarBotones();
 		}
 	}
@@ -188,6 +198,7 @@ public class Screen extends JPanel implements Runnable{
 		recalcularEscala();
 
 		g.clearRect(0, 0, getWidth(), getHeight());
+		g.setColor(Color.GRAY); g.fillRect(getWidth()-6, 0, 2, getHeight());
 		for(int i=0;i<botones.size();i++) {
 			botones.get(i).paintComponent(g);
 		}
@@ -244,7 +255,8 @@ public class Screen extends JPanel implements Runnable{
 		if (imagen == null) return;
 
 		//Si el mouse entra a un bloque que no era el que se encontraba seleccionado anteriormente, redibujar
-		if (mseOver.getX() < imagen.getWidth()/ ESCALA_IMAGEN && mseOver.getY() < imagen.getHeight()/ ESCALA_IMAGEN){
+		if (mseOver.getX() < imagen.getWidth()/ ESCALA_IMAGEN && mseOver.getY() < imagen.getHeight()/ ESCALA_IMAGEN
+				&& mseOver.getX() >= 0 && mseOver.getY() >=0){
 			for(int i=0;i<botones.size();i++) {
 				if (botones.get(i).contains(mseOver) && i != bloqueSeleccionado) {
 					bloqueSeleccionado = i; Screen.sc.repaint();
@@ -267,7 +279,8 @@ public class Screen extends JPanel implements Runnable{
 			return;
 		}
 		
-		if (mseClick.getX() < imagen.getWidth()/ ESCALA_IMAGEN && mseClick.getY() < imagen.getHeight()/ ESCALA_IMAGEN){
+		if (mseClick.getX() < imagen.getWidth()/ ESCALA_IMAGEN && mseClick.getY() < imagen.getHeight()/ ESCALA_IMAGEN
+				&& mseClick.getX() >= 0 && mseClick.getY() >=0){
 			for(int i=0;i<botones.size();i++) {
 				if(botones.get(i).contains(mseClick)) {
 					int imagenAnalizada = i+1;
