@@ -9,6 +9,7 @@ import javax.swing.*;
 
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 
@@ -47,6 +48,8 @@ public class Main {
                 		Screen.sc.reset(imagen);
                 	}
                 	else {
+                	    frame.getContentPane().removeAll(); //Quitar botón de abrir imagen
+
                 		Screen.sc = new Screen(imagen, frame);
 
                 		GridBagConstraints constraints = new GridBagConstraints();
@@ -68,10 +71,19 @@ public class Main {
                 }
 
 
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch(IOException e){
+                JOptionPane.showMessageDialog(null,
+                        "Se ha producido un error. No es posible leer el archivo",
+                        "Error al leer el archivo",
+                        JOptionPane.WARNING_MESSAGE);
             }
-            System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+            catch (Exception e) {
+                JOptionPane.showMessageDialog(null,
+                        "El archivo ingresado no es una imagen válida",
+                        "Archivo inválido",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+
         }
     }
 
@@ -183,9 +195,14 @@ public class Main {
         frame.setMinimumSize(new Dimension(930, 600));
         frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
 
-        frame.setVisible(true);
-        
-        abrirArchivo(frame);
 
+        JButton boton = new JButton("<html><h1>Abrir imagen</h1></html>");
+        boton.setPreferredSize(new Dimension(300, 80));
+        boton.addActionListener( (evt) -> abrirArchivo(frame) );
+
+        frame.getContentPane().setLayout(new GridBagLayout());
+        frame.getContentPane().add(boton);
+
+        frame.setVisible(true);
     }
 }
