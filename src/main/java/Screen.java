@@ -162,7 +162,7 @@ public class Screen extends JPanel implements Runnable{
 		double sumatoriaEntropia = 0d;
 		for(int i=0;i<botones.size();i++) {
 			botones.get(i).addImage(imagenes.get(i));
-			double entropia = imagenes.get(i).entropiaSimple();
+			double entropia = imagenes.get(i).entropiaConMemoria();
 			sumatoriaEntropia += entropia;
 
 			if(entropia < entropiaMin) {
@@ -178,11 +178,11 @@ public class Screen extends JPanel implements Runnable{
 
 		double entropiaPromedio = sumatoriaEntropia / botones.size();
 
-		double entropiaMasCercanaAlPromedio = imagenes.stream().map(Imagen::entropiaSimple)
+		double entropiaMasCercanaAlPromedio = imagenes.stream().map(Imagen::entropiaConMemoria)
 				.min(Comparator.comparingDouble((i) -> Math.abs(i - entropiaPromedio))).get();
 
 		int posEntropiaPromedio = IntStream.range(0, imagenes.size())
-				.filter(i -> imagenes.get(i).entropiaSimple() == entropiaMasCercanaAlPromedio)
+				.filter(i -> imagenes.get(i).entropiaConMemoria() == entropiaMasCercanaAlPromedio)
 				.limit(1).sum();
 
 
@@ -226,7 +226,8 @@ public class Screen extends JPanel implements Runnable{
 				g.drawString(" Varianza: " + varianzaAMostrar, imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*3);
 				g.drawString(" Desvío: " + Math.sqrt(varianzaAMostrar), imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*4);
 			}
-			g.drawString(" Entropía sin memoria: "+img.entropiaSimple() , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial+espaceY*5);
+			g.drawString(" Entropía sin memoria: "+img.entropiaSinMemoria() , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial+espaceY*5);
+            g.drawString(" Entropía con memoria: "+img.entropiaConMemoria() , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial+espaceY*6);
 		}
 		
 		g.setFont(fontRefence);
