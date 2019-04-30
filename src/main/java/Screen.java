@@ -3,10 +3,9 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
-import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -35,6 +34,10 @@ public class Screen extends JPanel implements Runnable{
 
     private static double esperanzaAMostrar;
 	private static double varianzaAMostrar;
+
+	private int posEntropiaMayor;
+	private int posEntropiaMenor;
+	private int posEntropiaPromedio;
 	
 	private final static int FRAME_WIDTH = 800;
     private final static int FRAME_HEIGHT = 700;
@@ -78,6 +81,33 @@ public class Screen extends JPanel implements Runnable{
 		img = null;
 		repaint();
 	}
+
+	private void encontrarPosicionesDeEntropias(){
+		double entropiaMax = Double.NEGATIVE_INFINITY;
+		double entropiaMin = Double.POSITIVE_INFINITY;
+		double menorCercaniaAlPromedio = Double.POSITIVE_INFINITY;
+
+		double entropiaPromedio = imagenes.stream().collect(Collectors.averagingDouble(Imagen::entropiaConMemoria));
+
+		for(int i=0;i<imagenes.size();i++) {
+			double entropia = imagenes.get(i).entropiaConMemoria();
+
+			if(entropia < entropiaMin) {
+				entropiaMin = entropia;
+				posEntropiaMenor = i;
+			}
+			if(entropia > entropiaMax) {
+				entropiaMax = entropia;
+				posEntropiaMayor = i;
+			}
+
+			double cercania = Math.abs(entropia - entropiaPromedio);
+			if (cercania < menorCercaniaAlPromedio){
+				menorCercaniaAlPromedio = cercania;
+				posEntropiaPromedio = i;
+			}
+		}
+	}
 	
 	public void reset(Imagen imagen) {
 		frenarThreads();
@@ -93,7 +123,8 @@ public class Screen extends JPanel implements Runnable{
 
 		mseOver = new Point(0, 0);
 		mseClick = new Point(-1, -1);
-		
+
+		encontrarPosicionesDeEntropias();
 
 		botones = new ArrayList<>();
 		inicializarBotones();
@@ -153,42 +184,15 @@ public class Screen extends JPanel implements Runnable{
 				contImagenes++;
 			}
 
-		double entropiaMax = Double.NEGATIVE_INFINITY;
-		int posEntropiaMax=0;
-		double entropiaMin = Double.POSITIVE_INFINITY;
-		int posEntropiaMin=0;
 
 		//cargar imagen en botones
-		double sumatoriaEntropia = 0d;
 		for(int i=0;i<botones.size();i++) {
 			botones.get(i).addImage(imagenes.get(i));
-			double entropia = imagenes.get(i).entropiaConMemoria();
-			sumatoriaEntropia += entropia;
-
-			if(entropia < entropiaMin) {
-				entropiaMin = entropia;
-				posEntropiaMin = i;
-			}
-
-			if(entropia > entropiaMax) {
-				entropiaMax= entropia;
-				posEntropiaMax = i;
-			}
 		}
 
-		double entropiaPromedio = sumatoriaEntropia / botones.size();
-
-		double entropiaMasCercanaAlPromedio = imagenes.stream().map(Imagen::entropiaConMemoria)
-				.min(Comparator.comparingDouble((i) -> Math.abs(i - entropiaPromedio))).get();
-
-		int posEntropiaPromedio = IntStream.range(0, imagenes.size())
-				.filter(i -> imagenes.get(i).entropiaConMemoria() == entropiaMasCercanaAlPromedio)
-				.limit(1).sum();
-
-
 		botones.get(posEntropiaPromedio).remarcar(true, ColorPromedioEntropia);
-		botones.get(posEntropiaMin).remarcar(true, ColorMenorEntropia);
-		botones.get(posEntropiaMax).remarcar(true, ColorMayorEntropia);
+		botones.get(posEntropiaMenor).remarcar(true, ColorMenorEntropia);
+		botones.get(posEntropiaMayor).remarcar(true, ColorMayorEntropia);
 
 		cargarImagen = new Boton(imagenWidth / ESCALA_IMAGEN + espaceX, botonCIY, botonCIWidth, botonCIHeight);
 		cargarImagen.setName(botonCIName);
