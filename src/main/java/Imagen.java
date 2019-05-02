@@ -18,14 +18,15 @@ public class Imagen extends JPanel{
     private FuenteMarkoviana fuente;
     private double sprnz = Double.NEGATIVE_INFINITY;
     private double vrnz = Double.NEGATIVE_INFINITY;
+    private double dvio = Double.NEGATIVE_INFINITY;
+    private double entropiaConMemoria = Double.NEGATIVE_INFINITY;
     protected final int CANTIDADCOLORES = 256;
 
     public Imagen(BufferedImage imagen){
         if (imagen == null) throw new IllegalArgumentException("No se permite un buffer nulo");
         this.imagen = imagen;
-		
-		double[][] probabilidades = probabilidadesCondicionales();
-        fuente = new FuenteMarkoviana(probabilidades);
+
+        fuente = new FuenteMarkoviana(probabilidadesCondicionales(), probabilidadesSimples());
 
     }
 
@@ -103,7 +104,7 @@ public class Imagen extends JPanel{
             for (int x = 0; x < this.getWidth(); x++){
                 int color = this.getColor(x, y);
                 if (anterior >= 0) {
-                    probabilidades[color][anterior]++;
+                    probabilidades[anterior][color]++;
                     totales[anterior]++;
                 }
                 anterior = color;
@@ -113,8 +114,8 @@ public class Imagen extends JPanel{
         //Calcular las probabilidades de transición condicionales
         for (int i = 0; i < CANTIDADCOLORES; i++) {
             for (int j = 0; j < CANTIDADCOLORES; j++) {
-                if (totales[j] != 0)
-                    probabilidades[i][j] /= totales[j];
+                if (totales[i] != 0)
+                    probabilidades[i][j] /= totales[i];
             }
         }
 
@@ -149,17 +150,14 @@ public class Imagen extends JPanel{
     }
 
 
-    public double entropiaSimple(){
-        double[] probabilidades = this.probabilidadesSimples();
+    public double entropiaSinMemoria(){
+        return fuente.entropiaSinMemoria();
+    }
 
-        double entropia = 0d;
-
-        for (int i = 0; i < probabilidades.length; i++){
-            if (probabilidades[i] != 0)
-                entropia += probabilidades[i] * Math.log(probabilidades[i]) / Math.log(2d);
-        }
-
-        return -entropia;
+    public double entropiaConMemoria(){
+        if (entropiaConMemoria == Double.NEGATIVE_INFINITY)
+            entropiaConMemoria = fuente.entropiaConMemoria();
+        return entropiaConMemoria;
     }
 
 
@@ -167,24 +165,34 @@ public class Imagen extends JPanel{
         ImageIO.write(imagen, "bmp", new File(ruta));
     }
     
-    public double esperanza() {
+    public synchronized double esperanza() {
     	if (sprnz == Double.NEGATIVE_INFINITY)
     		sprnz = fuente.esperanza(getColor(0, 0));
     	return sprnz;
     }
 
-    public void resetSprnz(){
+    public synchronized void resetSprnz(){
         sprnz = Double.NEGATIVE_INFINITY;
     }
 
-    public void resetVrnz(){
+    public synchronized void resetVrnz(){
         vrnz = Double.NEGATIVE_INFINITY;
     }
+
+    public synchronized void resetDvio(){
+        dvio = Double.NEGATIVE_INFINITY;
+    }
     
-    public double varianza() {
+    public synchronized double varianza() {
     	if (vrnz == Double.NEGATIVE_INFINITY)
     		vrnz = fuente.varianza(getColor(0, 0));
     	return vrnz;
+    }
+
+    public synchronized double desvio() {
+        if (dvio == Double.NEGATIVE_INFINITY)
+            dvio = fuente.desvio(getColor(0, 0));
+        return dvio;
     }
     
     public void setX(double x) {

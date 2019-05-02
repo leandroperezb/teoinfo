@@ -3,23 +3,22 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
-import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class Screen extends JPanel implements Runnable{
 	static int ESCALA_IMAGEN = 4;
-	private static List<Imagen> imagenes;
+	static List<Imagen> imagenes;
 	static Point mseOver;
 	private static Point mseClick;
 	static Screen sc = null; //Workaround para entrar a la instancia desde los métodos estáticos que estaban definidos
 	private Thread thread;
 	private static Thread threadEsperanza = new Thread();
-	private static Thread threadVarianza = new Thread();
+	private static Thread threadDesvio = new Thread();
 	private static Semaphore sem;
 	static int bloqueSeleccionado;
     private static List<Boton> botones;
@@ -34,7 +33,11 @@ public class Screen extends JPanel implements Runnable{
     private static JFrame frame;
 
     private static double esperanzaAMostrar;
-	private static double varianzaAMostrar;
+	private static double desvioAMostrar;
+
+	static int posEntropiaMayor;
+	static int posEntropiaMenor;
+	static int posEntropiaPromedio;
 	
 	private final static int FRAME_WIDTH = 800;
     private final static int FRAME_HEIGHT = 700;
@@ -45,12 +48,6 @@ public class Screen extends JPanel implements Runnable{
     private int espaceY = 20;
     private Font fontRefence = new Font("referencia", Font.BOLD, 16);
     private Font fontDat = new Font("datos", Font.BOLD, 12);
-    
-    private static Boton cargarImagen;
-    private int botonCIY = 450;
-    private int botonCIWidth = 175;
-    private int botonCIHeight = 35;
-    private String botonCIName = "Nueva Imagen";
 
 	public Screen(Imagen imagen, JFrame f) {
 		Screen.sc = this;
@@ -71,12 +68,39 @@ public class Screen extends JPanel implements Runnable{
 	void onNuevosEpsilons(){
 		frenarThreads();
 		for (Imagen i : imagenes){
-			i.resetVrnz(); i.resetSprnz();
+			i.resetVrnz(); i.resetSprnz(); i.resetDvio();
 		}
 		esperanzaAMostrar = Double.NEGATIVE_INFINITY;
-		varianzaAMostrar = Double.NEGATIVE_INFINITY;
+		desvioAMostrar = Double.NEGATIVE_INFINITY;
 		img = null;
 		repaint();
+	}
+
+	private void encontrarPosicionesDeEntropias(){
+		double entropiaMax = Double.NEGATIVE_INFINITY;
+		double entropiaMin = Double.POSITIVE_INFINITY;
+		double menorCercaniaAlPromedio = Double.POSITIVE_INFINITY;
+
+		double entropiaPromedio = imagenes.stream().collect(Collectors.averagingDouble(Imagen::entropiaConMemoria));
+
+		for(int i=0;i<imagenes.size();i++) {
+			double entropia = imagenes.get(i).entropiaConMemoria();
+
+			if(entropia < entropiaMin) {
+				entropiaMin = entropia;
+				posEntropiaMenor = i;
+			}
+			if(entropia > entropiaMax) {
+				entropiaMax = entropia;
+				posEntropiaMayor = i;
+			}
+
+			double cercania = Math.abs(entropia - entropiaPromedio);
+			if (cercania < menorCercaniaAlPromedio){
+				menorCercaniaAlPromedio = cercania;
+				posEntropiaPromedio = i;
+			}
+		}
 	}
 	
 	public void reset(Imagen imagen) {
@@ -88,12 +112,13 @@ public class Screen extends JPanel implements Runnable{
 		img = null;
 		bloqueSeleccionado = Integer.MIN_VALUE;
 		esperanzaAMostrar = Double.NEGATIVE_INFINITY;
-		varianzaAMostrar = Double.NEGATIVE_INFINITY;
+		desvioAMostrar = Double.NEGATIVE_INFINITY;
 
 
 		mseOver = new Point(0, 0);
 		mseClick = new Point(-1, -1);
-		
+
+		encontrarPosicionesDeEntropias();
 
 		botones = new ArrayList<>();
 		inicializarBotones();
@@ -108,10 +133,10 @@ public class Screen extends JPanel implements Runnable{
 			img.resetSprnz();
 		}
 
-		if (threadVarianza.isAlive()) {
-			//Lo mismo que con el thread de la esperanza, pero para el cálculo de la varianza
-			threadVarianza.stop();
-			img.resetVrnz();
+		if (threadDesvio.isAlive()) {
+			//Lo mismo que con el thread de la esperanza, pero para el cálculo del desvío
+			threadDesvio.stop();
+			img.resetDvio();
 		}
 	}
 
@@ -153,45 +178,16 @@ public class Screen extends JPanel implements Runnable{
 				contImagenes++;
 			}
 
-		double entropiaMax = Double.NEGATIVE_INFINITY;
-		int posEntropiaMax=0;
-		double entropiaMin = Double.POSITIVE_INFINITY;
-		int posEntropiaMin=0;
 
 		//cargar imagen en botones
-		double sumatoriaEntropia = 0d;
 		for(int i=0;i<botones.size();i++) {
 			botones.get(i).addImage(imagenes.get(i));
-			double entropia = imagenes.get(i).entropiaSimple();
-			sumatoriaEntropia += entropia;
-
-			if(entropia < entropiaMin) {
-				entropiaMin = entropia;
-				posEntropiaMin = i;
-			}
-
-			if(entropia > entropiaMax) {
-				entropiaMax= entropia;
-				posEntropiaMax = i;
-			}
 		}
 
-		double entropiaPromedio = sumatoriaEntropia / botones.size();
-
-		double entropiaMasCercanaAlPromedio = imagenes.stream().map(Imagen::entropiaSimple)
-				.min(Comparator.comparingDouble((i) -> Math.abs(i - entropiaPromedio))).get();
-
-		int posEntropiaPromedio = IntStream.range(0, imagenes.size())
-				.filter(i -> imagenes.get(i).entropiaSimple() == entropiaMasCercanaAlPromedio)
-				.limit(1).sum();
-
-
 		botones.get(posEntropiaPromedio).remarcar(true, ColorPromedioEntropia);
-		botones.get(posEntropiaMin).remarcar(true, ColorMenorEntropia);
-		botones.get(posEntropiaMax).remarcar(true, ColorMayorEntropia);
+		botones.get(posEntropiaMenor).remarcar(true, ColorMenorEntropia);
+		botones.get(posEntropiaMayor).remarcar(true, ColorMayorEntropia);
 
-		cargarImagen = new Boton(imagenWidth / ESCALA_IMAGEN + espaceX, botonCIY, botonCIWidth, botonCIHeight);
-		cargarImagen.setName(botonCIName);
 	}
 
 	//dibujo sobre el frame
@@ -204,7 +200,6 @@ public class Screen extends JPanel implements Runnable{
 			botones.get(i).paintComponent(g);
 		}
 
-		cargarImagen.paintComponent(g);
 
 		if (img!= null) {
 			final int yInicial = 100;
@@ -219,14 +214,15 @@ public class Screen extends JPanel implements Runnable{
 				g.drawString(" Esperanza: " + esperanzaAMostrar, imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*2);
 			}
 
-            if (varianzaAMostrar == Double.NEGATIVE_INFINITY){
+            if (desvioAMostrar == Double.NEGATIVE_INFINITY){
 				g.drawString(" Varianza: calculando...", imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*3);
 				g.drawString(" Desvío: calculando... ", imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*4);
 			}else {
-				g.drawString(" Varianza: " + varianzaAMostrar, imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*3);
-				g.drawString(" Desvío: " + Math.sqrt(varianzaAMostrar), imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*4);
+				g.drawString(" Varianza: " + Math.pow(desvioAMostrar, 2), imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*3);
+				g.drawString(" Desvío: " + desvioAMostrar, imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*4);
 			}
-			g.drawString(" Entropía sin memoria: "+img.entropiaSimple() , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial+espaceY*5);
+			g.drawString(" Entropía sin memoria: "+img.entropiaSinMemoria() , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial+espaceY*5);
+            g.drawString(" Entropía con memoria: "+img.entropiaConMemoria() , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial+espaceY*6);
 		}
 		
 		g.setFont(fontRefence);
@@ -242,14 +238,6 @@ public class Screen extends JPanel implements Runnable{
 	public static void setOverMse(Point point) {
 		if (point == null) return;
 		mseOver = point;
-
-		if(cargarImagen != null && cargarImagen.contains(point)) {
-			if (bloqueSeleccionado != -1) {
-				bloqueSeleccionado = -1;
-				Screen.sc.repaint();
-			}
-			return;
-		}
 
 		Imagen imagen = Screen.sc.imagen;
 		if (imagen == null) return;
@@ -273,11 +261,6 @@ public class Screen extends JPanel implements Runnable{
 	public static void setMseClick(Point point) {
 		if (point == null) return;
 		mseClick = point; Imagen imagen = Screen.sc.imagen;
-
-		if(cargarImagen != null && cargarImagen.contains(point)) {
-			Main.abrirArchivo(frame);
-			return;
-		}
 		
 		if (mseClick.getX() < imagen.getWidth()/ ESCALA_IMAGEN && mseClick.getY() < imagen.getHeight()/ ESCALA_IMAGEN
 				&& mseClick.getX() >= 0 && mseClick.getY() >=0){
@@ -290,7 +273,7 @@ public class Screen extends JPanel implements Runnable{
 
 					//Hice click en un botón, por lo que quiero calcular las estadísticas para otro bloque,
 					//con lo que reseteo los valores que está mostrando la GUI actualmente
-					Screen.esperanzaAMostrar = Double.NEGATIVE_INFINITY; Screen.varianzaAMostrar = Double.NEGATIVE_INFINITY;
+					Screen.esperanzaAMostrar = Double.NEGATIVE_INFINITY; Screen.desvioAMostrar = Double.NEGATIVE_INFINITY;
 
 					Screen.img = imagenes.get(i);
 
@@ -298,11 +281,11 @@ public class Screen extends JPanel implements Runnable{
 						Screen.esperanzaAMostrar = Screen.img.esperanza();
 						Screen.sem.release(); //Indico que hay una novedad para repintar el JPanel
 					});
-					threadVarianza = new Thread(() -> {
-						Screen.varianzaAMostrar = Screen.img.varianza();
+					threadDesvio = new Thread(() -> {
+						Screen.desvioAMostrar = Screen.img.desvio();
 						Screen.sem.release(); //Indico que hay una novedad para repintar el JPanel
 					});
-					threadEsperanza.start(); threadVarianza.start();
+					threadEsperanza.start(); threadDesvio.start();
 
 	                frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
 	                frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);

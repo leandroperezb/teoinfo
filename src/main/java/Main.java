@@ -15,6 +15,7 @@ import java.text.ParseException;
 
 
 public class Main {
+	private static JFrame frame;
     private final static int FRAME_WIDTH = 930;
     private final static int FRAME_HEIGHT = 700;
     private final static int FRAME_LOC_X = 250;
@@ -24,6 +25,10 @@ public class Main {
     static NumericTextField epsilonVarianza = null;
     static JLabel actualEsperanza;
     static JLabel actualVarianza;
+
+    static JButton setearEpsilons = null;
+    static JButton addImagen = null;
+    static JButton guardarInfo = null;
 
     static void mostrarHistograma(JFrame frame, DefaultIntervalXYDataset dataset, int i) {
         JFreeChart histograma = ChartFactory.createHistogram("Histograma "+i, "Intensidad de color:",
@@ -55,13 +60,13 @@ public class Main {
                 		GridBagConstraints constraints = new GridBagConstraints();
                 		frame.getContentPane().setLayout(new GridBagLayout());
 
-                		JPanel panelEpsilons = new JPanel();
-                        crearPanelEpsilons(panelEpsilons);
+                		JPanel panelLateral = new JPanel();
+                        crearPanelLateral(panelLateral);
 
 
                         constraints.weightx = 0d; constraints.fill = GridBagConstraints.BOTH;
                         constraints.weighty = 1d; constraints.gridx=1; constraints.gridy=0;
-                		frame.getContentPane().add(panelEpsilons, constraints);
+                		frame.getContentPane().add(panelLateral, constraints);
 
                         constraints.weightx = 1d; constraints.gridx=0;
                 		frame.getContentPane().add(Screen.sc, constraints);
@@ -87,7 +92,32 @@ public class Main {
         }
     }
 
-    private static void crearPanelEpsilons(JPanel panelEpsilons) {
+    private static void generarArchivos(JFrame frame){
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Seleccione una carpeta donde guardar los archivos");
+        fileChooser.setApproveButtonText("Seleccionar");
+        fileChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
+        fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+        int result = fileChooser.showOpenDialog(frame);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            new Thread( () -> {
+                setearEpsilons.setEnabled(false); addImagen.setEnabled(false); guardarInfo.setEnabled(false);
+                String directorio = fileChooser.getSelectedFile().getAbsolutePath();
+                TrabajoPractico.incisoA(directorio);
+                TrabajoPractico.incisoC(directorio);
+                TrabajoPractico.incisoD(directorio);
+
+                JOptionPane.showMessageDialog(null,
+                        "Archivos guardados correctamente",
+                        "",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                setearEpsilons.setEnabled(true); addImagen.setEnabled(true); guardarInfo.setEnabled(true);
+            }).start();
+        }
+    }
+
+    private static void crearPanelLateral(JPanel panelLateral) {
         DecimalFormat format = new DecimalFormat("#,###.#######################################" +
                 "#############################################################################" +
                 "###################################################################################" +
@@ -99,7 +129,7 @@ public class Main {
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH; constraints.weighty = 0d; constraints.weightx = 0;
 
-        panelEpsilons.setLayout(new GridBagLayout());
+        panelLateral.setLayout(new GridBagLayout());
 
 
         JPanel panelEsperanza = new JPanel(); panelEsperanza.setLayout(new GridBagLayout());
@@ -121,15 +151,15 @@ public class Main {
 
 
         JPanel panelVarianza = new JPanel(); panelVarianza.setLayout(new GridBagLayout());
-            label = new JLabel("Épsilon para la varianza:");
+            label = new JLabel("Épsilon para el desvío:");
             epsilonVarianza = new NumericTextField(15, format);
-            epsilonVarianza.setValue(FuenteMarkoviana.epsilonVarianza);
+            epsilonVarianza.setValue(FuenteMarkoviana.epsilonDesvio);
 
             constraints.gridy = 0; constraints.gridx = 0;
             panelVarianza.add(label, constraints);
 
             JPanel panelActualVarianza = new JPanel();
-            actualVarianza = new JLabel("(Valor actual: " + FuenteMarkoviana.epsilonVarianza + ")");
+            actualVarianza = new JLabel("(Valor actual: " + FuenteMarkoviana.epsilonDesvio + ")");
             panelActualVarianza.add(actualVarianza);
 
             constraints.gridy = 1;
@@ -139,14 +169,14 @@ public class Main {
 
 
         constraints.gridy = 0; constraints.gridx = 0; constraints.ipady = 80;
-        panelEpsilons.add(panelEsperanza, constraints);
+        panelLateral.add(panelEsperanza, constraints);
         constraints.gridy = 1;
-        panelEpsilons.add(panelVarianza, constraints);
+        panelLateral.add(panelVarianza, constraints);
 
         JPanel panelBoton = new JPanel(); panelBoton.setLayout(new GridBagLayout());
-            JButton boton = new JButton("Setear nuevos épsilons");
+            setearEpsilons = new JButton("Setear nuevos épsilons");
             constraints.gridy = 0; constraints.ipady = 0;
-            panelBoton.add(boton, constraints);
+            panelBoton.add(setearEpsilons, constraints);
 
             JPanel nota = new JPanel();
             nota.add(new JLabel("<html><center><small>(Aborta cálculos en ejecución<br>y borra " +
@@ -156,14 +186,14 @@ public class Main {
             panelBoton.add(nota, constraints);
 
             //Al clickear el botón, actualizar los épsilons
-            boton.addActionListener( (evt) -> {
+            setearEpsilons.addActionListener( (evt) -> {
                     try{
-                        FuenteMarkoviana.epsilonVarianza = Math.abs(epsilonVarianza.getDoubleValue());
+                        FuenteMarkoviana.epsilonDesvio = Math.abs(epsilonVarianza.getDoubleValue());
                     }catch (ParseException e) {
-                        FuenteMarkoviana.epsilonVarianza = 0d;
+                        FuenteMarkoviana.epsilonDesvio = 0d;
                     }finally {
-                        epsilonVarianza.setValue(FuenteMarkoviana.epsilonVarianza);
-                        actualVarianza.setText("(Valor actual: " + FuenteMarkoviana.epsilonVarianza + ")");
+                        epsilonVarianza.setValue(FuenteMarkoviana.epsilonDesvio);
+                        actualVarianza.setText("(Valor actual: " + FuenteMarkoviana.epsilonDesvio + ")");
                     }
                     try{
                         FuenteMarkoviana.epsilonEsperanza = Math.abs(epsilonEsperanza.getDoubleValue());
@@ -174,22 +204,42 @@ public class Main {
                         actualEsperanza.setText("(Valor actual: " + FuenteMarkoviana.epsilonEsperanza + ")");
                     }
 
-                    panelEpsilons.repaint();
+                    panelLateral.repaint();
                     Screen.sc.onNuevosEpsilons();
                 }
             );
         constraints.gridy = 2;
-        panelEpsilons.add(panelBoton, constraints);
+        panelLateral.add(panelBoton, constraints);
 
 
         //El último elemento es un panel vacío con "weighty" máximo, para que apile al resto de los
         //elementos en el tope del frame
         constraints.weighty = 1d; constraints.gridy = 3;
-        panelEpsilons.add(new JPanel(), constraints);
+        panelLateral.add(new JPanel(), constraints);
+        
+		//boton de guardar datos
+        JPanel panelGuardarDatos = new JPanel();
+		guardarInfo = new JButton("<html><h1>Generar archivos</h1></html>");
+        guardarInfo.addActionListener( (evt) -> generarArchivos(frame) );
+		panelGuardarDatos.add(guardarInfo);
+		constraints.gridy = 4;
+		panelLateral.add(panelGuardarDatos, constraints);
+        
+       //boton de cargar imagen
+        JPanel panelCargaImagen = new JPanel();
+		addImagen = new JButton("<html><h1>Abrir imagen</h1></html>");
+		addImagen.addActionListener( (evt) -> abrirArchivo(frame) );
+		panelCargaImagen.add(addImagen);
+		constraints.gridy = 5;
+		panelLateral.add(panelCargaImagen, constraints);
+		
+
+		
+		
     }
 
     public static void main(String[] args){
-        JFrame frame = new JFrame("Teoría de la información");
+        frame = new JFrame("Teoría de la información");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
         frame.setMinimumSize(new Dimension(930, 600));

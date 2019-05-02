@@ -1,11 +1,29 @@
 public class FuenteMarkoviana {
     protected double[][] probabilidades;
+    protected double[] probabilidadesEstacionarias;
     private final int ITERACIONES = 10000;
     static double epsilonEsperanza = 0.00000001d;
     static double epsilonVarianza = 0.00001d;
+    static double epsilonDesvio = 0.0000001d;
 
     public FuenteMarkoviana(double[][] probabilidades){
         this.probabilidades = probabilidades;
+
+        for (int i = 0; i < probabilidades.length; i++){
+            for (int j = 0; j < probabilidades.length; j++){
+                if (probabilidades[i][j] != 0d){
+                    this.probabilidadesEstacionarias = vectorEstacionario(i);
+                    return;
+                }
+            }
+        }
+
+        this.probabilidadesEstacionarias = vectorEstacionario(0);
+    }
+
+    public FuenteMarkoviana(double[][] probabilidades, double[] probabilidadesEstacionarias){
+        this.probabilidades = probabilidades;
+        this.probabilidadesEstacionarias = probabilidadesEstacionarias;
     }
 
     public int darSimbolo(int n){
@@ -13,7 +31,7 @@ public class FuenteMarkoviana {
         double prob = Math.random();
         double contador = 0f;
         for (int i = 0; i < probabilidades.length; i++){
-            contador += probabilidades[i][n];
+            contador += probabilidades[n][i];
             if (prob < contador)
                 return i;
         }
@@ -21,23 +39,22 @@ public class FuenteMarkoviana {
     }
 
 
-    //Una prueba en la que le daba el vector estacionario para obtener los símbolos
-    public int darSimbolo(double[] vector){
+    public int darSimbolo(){
         double prob = Math.random();
         double contador = 0f;
-        for (int i = 0; i < vector.length; i++){
-            contador += vector[i];
+        for (int i = 0; i < probabilidadesEstacionarias.length; i++){
+            contador += probabilidadesEstacionarias[i];
             if (prob < contador)
                 return i;
         }
-        return vector.length - 1;
+        return probabilidadesEstacionarias.length - 1;
     }
 
-    protected boolean converge(double valor1, double valor2, double epsilon){
+    protected static boolean converge(double valor1, double valor2, double epsilon){
         return (Math.abs(valor1 - valor2) < epsilon);
     }
 
-    protected boolean converge(double[] valor1, double[] valor2, double epsilon){
+    protected static boolean converge(double[] valor1, double[] valor2, double epsilon){
         if (valor1.length != valor2.length) throw new IllegalArgumentException("Los arreglos no coinciden en tamaño");
 
         for (int i = 0; i < valor1.length; i++){
@@ -107,5 +124,53 @@ public class FuenteMarkoviana {
         }
 
         return varianza;
+    }
+
+
+    public double desvio(int simboloInicial){
+        long tiradas = 0; long sumatoriaEsperanza = 0; long sumatoriaDesvio = 0;
+        double desvioViejo = 0d; double desvio = 0d;
+        int simboloAnterior = simboloInicial;
+
+        while (tiradas < ITERACIONES || !converge(desvioViejo, desvio, epsilonDesvio)){
+            tiradas++;
+            simboloAnterior = this.darSimbolo(simboloAnterior);
+            sumatoriaEsperanza += simboloAnterior;
+            sumatoriaDesvio += Math.pow(simboloAnterior - (double) sumatoriaEsperanza / tiradas, 2);
+
+            desvioViejo = desvio;
+            desvio = Math.sqrt((double) sumatoriaDesvio / tiradas);
+        }
+
+        return desvio;
+    }
+
+
+    public double entropiaConMemoria(){
+        double entropia = 0d;
+
+        //Sumar entropía condicional
+        for (int i = 0; i < probabilidades.length; i++){
+            entropia += probabilidadesEstacionarias[i] * FuenteMarkoviana.entropiaSinMemoria(probabilidades[i]);
+        }
+
+        return entropia;
+    }
+
+
+
+    public static double entropiaSinMemoria(double[] probabilidades){
+        double entropia = 0d;
+
+        for (int i = 0; i < probabilidades.length; i++){
+            if (probabilidades[i] != 0)
+                entropia += probabilidades[i] * Math.log(probabilidades[i]) / Math.log(2d);
+        }
+
+        return -entropia;
+    }
+
+    public double entropiaSinMemoria(){
+        return FuenteMarkoviana.entropiaSinMemoria(this.probabilidadesEstacionarias);
     }
 }
