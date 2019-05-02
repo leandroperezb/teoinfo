@@ -4,6 +4,7 @@ public class FuenteMarkoviana {
     private final int ITERACIONES = 10000;
     static double epsilonEsperanza = 0.00000001d;
     static double epsilonVarianza = 0.00001d;
+    static double epsilonDesvio = 0.0000001d;
 
     public FuenteMarkoviana(double[][] probabilidades){
         this.probabilidades = probabilidades;
@@ -126,8 +127,27 @@ public class FuenteMarkoviana {
     }
 
 
+    public double desvio(int simboloInicial){
+        long tiradas = 0; long sumatoriaEsperanza = 0; long sumatoriaDesvio = 0;
+        double desvioViejo = 0d; double desvio = 0d;
+        int simboloAnterior = simboloInicial;
+
+        while (tiradas < ITERACIONES || !converge(desvioViejo, desvio, epsilonDesvio)){
+            tiradas++;
+            simboloAnterior = this.darSimbolo(simboloAnterior);
+            sumatoriaEsperanza += simboloAnterior;
+            sumatoriaDesvio += Math.pow(simboloAnterior - (double) sumatoriaEsperanza / tiradas, 2);
+
+            desvioViejo = desvio;
+            desvio = Math.sqrt((double) sumatoriaDesvio / tiradas);
+        }
+
+        return desvio;
+    }
+
+
     public double entropiaConMemoria(){
-        double entropia = this.entropiaSinMemoria();
+        double entropia = 0d;
 
         //Sumar entropía condicional
         for (int i = 0; i < probabilidades.length; i++){

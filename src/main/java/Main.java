@@ -56,13 +56,13 @@ public class Main {
                 		GridBagConstraints constraints = new GridBagConstraints();
                 		frame.getContentPane().setLayout(new GridBagLayout());
 
-                		JPanel panelEpsilons = new JPanel();
-                        crearPanelEpsilons(panelEpsilons);
+                		JPanel panelLateral = new JPanel();
+                        crearPanelLateral(panelLateral);
 
 
                         constraints.weightx = 0d; constraints.fill = GridBagConstraints.BOTH;
                         constraints.weighty = 1d; constraints.gridx=1; constraints.gridy=0;
-                		frame.getContentPane().add(panelEpsilons, constraints);
+                		frame.getContentPane().add(panelLateral, constraints);
 
                         constraints.weightx = 1d; constraints.gridx=0;
                 		frame.getContentPane().add(Screen.sc, constraints);
@@ -88,7 +88,7 @@ public class Main {
         }
     }
 
-    private static void crearPanelEpsilons(JPanel panelEpsilons) {
+    private static void crearPanelLateral(JPanel panelLateral) {
         DecimalFormat format = new DecimalFormat("#,###.#######################################" +
                 "#############################################################################" +
                 "###################################################################################" +
@@ -100,7 +100,7 @@ public class Main {
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH; constraints.weighty = 0d; constraints.weightx = 0;
 
-        panelEpsilons.setLayout(new GridBagLayout());
+        panelLateral.setLayout(new GridBagLayout());
 
 
         JPanel panelEsperanza = new JPanel(); panelEsperanza.setLayout(new GridBagLayout());
@@ -122,15 +122,15 @@ public class Main {
 
 
         JPanel panelVarianza = new JPanel(); panelVarianza.setLayout(new GridBagLayout());
-            label = new JLabel("Épsilon para la varianza:");
+            label = new JLabel("Épsilon para el desvío:");
             epsilonVarianza = new NumericTextField(15, format);
-            epsilonVarianza.setValue(FuenteMarkoviana.epsilonVarianza);
+            epsilonVarianza.setValue(FuenteMarkoviana.epsilonDesvio);
 
             constraints.gridy = 0; constraints.gridx = 0;
             panelVarianza.add(label, constraints);
 
             JPanel panelActualVarianza = new JPanel();
-            actualVarianza = new JLabel("(Valor actual: " + FuenteMarkoviana.epsilonVarianza + ")");
+            actualVarianza = new JLabel("(Valor actual: " + FuenteMarkoviana.epsilonDesvio + ")");
             panelActualVarianza.add(actualVarianza);
 
             constraints.gridy = 1;
@@ -140,9 +140,9 @@ public class Main {
 
 
         constraints.gridy = 0; constraints.gridx = 0; constraints.ipady = 80;
-        panelEpsilons.add(panelEsperanza, constraints);
+        panelLateral.add(panelEsperanza, constraints);
         constraints.gridy = 1;
-        panelEpsilons.add(panelVarianza, constraints);
+        panelLateral.add(panelVarianza, constraints);
 
         JPanel panelBoton = new JPanel(); panelBoton.setLayout(new GridBagLayout());
             JButton boton = new JButton("Setear nuevos épsilons");
@@ -159,12 +159,12 @@ public class Main {
             //Al clickear el botón, actualizar los épsilons
             boton.addActionListener( (evt) -> {
                     try{
-                        FuenteMarkoviana.epsilonVarianza = Math.abs(epsilonVarianza.getDoubleValue());
+                        FuenteMarkoviana.epsilonDesvio = Math.abs(epsilonVarianza.getDoubleValue());
                     }catch (ParseException e) {
-                        FuenteMarkoviana.epsilonVarianza = 0d;
+                        FuenteMarkoviana.epsilonDesvio = 0d;
                     }finally {
-                        epsilonVarianza.setValue(FuenteMarkoviana.epsilonVarianza);
-                        actualVarianza.setText("(Valor actual: " + FuenteMarkoviana.epsilonVarianza + ")");
+                        epsilonVarianza.setValue(FuenteMarkoviana.epsilonDesvio);
+                        actualVarianza.setText("(Valor actual: " + FuenteMarkoviana.epsilonDesvio + ")");
                     }
                     try{
                         FuenteMarkoviana.epsilonEsperanza = Math.abs(epsilonEsperanza.getDoubleValue());
@@ -175,25 +175,25 @@ public class Main {
                         actualEsperanza.setText("(Valor actual: " + FuenteMarkoviana.epsilonEsperanza + ")");
                     }
 
-                    panelEpsilons.repaint();
+                    panelLateral.repaint();
                     Screen.sc.onNuevosEpsilons();
                 }
             );
         constraints.gridy = 2;
-        panelEpsilons.add(panelBoton, constraints);
+        panelLateral.add(panelBoton, constraints);
 
 
         //El último elemento es un panel vacío con "weighty" máximo, para que apile al resto de los
         //elementos en el tope del frame
         constraints.weighty = 1d; constraints.gridy = 3;
-        panelEpsilons.add(new JPanel(), constraints);
+        panelLateral.add(new JPanel(), constraints);
         
 		//boton de guardar datos
         JPanel panelGuardarDatos = new JPanel();
 		JButton guardarInfo = new JButton("<html><h1>Guardar datos</h1></html>");
 		panelGuardarDatos.add(guardarInfo);
 		constraints.gridy = 4;
-		panelEpsilons.add(panelGuardarDatos, constraints);
+		panelLateral.add(panelGuardarDatos, constraints);
         
        //boton de cargar imagen
         JPanel panelCargaImagen = new JPanel();
@@ -201,7 +201,7 @@ public class Main {
 		addImagen.addActionListener( (evt) -> abrirArchivo(frame) );
 		panelCargaImagen.add(addImagen);
 		constraints.gridy = 5;
-		panelEpsilons.add(panelCargaImagen, constraints);
+		panelLateral.add(panelCargaImagen, constraints);
 		
 
 		

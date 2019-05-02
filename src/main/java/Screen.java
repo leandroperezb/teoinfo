@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -19,7 +18,7 @@ public class Screen extends JPanel implements Runnable{
 	static Screen sc = null; //Workaround para entrar a la instancia desde los métodos estáticos que estaban definidos
 	private Thread thread;
 	private static Thread threadEsperanza = new Thread();
-	private static Thread threadVarianza = new Thread();
+	private static Thread threadDesvio = new Thread();
 	private static Semaphore sem;
 	static int bloqueSeleccionado;
     private static List<Boton> botones;
@@ -34,7 +33,7 @@ public class Screen extends JPanel implements Runnable{
     private static JFrame frame;
 
     private static double esperanzaAMostrar;
-	private static double varianzaAMostrar;
+	private static double desvioAMostrar;
 
 	private int posEntropiaMayor;
 	private int posEntropiaMenor;
@@ -69,10 +68,10 @@ public class Screen extends JPanel implements Runnable{
 	void onNuevosEpsilons(){
 		frenarThreads();
 		for (Imagen i : imagenes){
-			i.resetVrnz(); i.resetSprnz();
+			i.resetVrnz(); i.resetSprnz(); i.resetDvio();
 		}
 		esperanzaAMostrar = Double.NEGATIVE_INFINITY;
-		varianzaAMostrar = Double.NEGATIVE_INFINITY;
+		desvioAMostrar = Double.NEGATIVE_INFINITY;
 		img = null;
 		repaint();
 	}
@@ -113,7 +112,7 @@ public class Screen extends JPanel implements Runnable{
 		img = null;
 		bloqueSeleccionado = Integer.MIN_VALUE;
 		esperanzaAMostrar = Double.NEGATIVE_INFINITY;
-		varianzaAMostrar = Double.NEGATIVE_INFINITY;
+		desvioAMostrar = Double.NEGATIVE_INFINITY;
 
 
 		mseOver = new Point(0, 0);
@@ -134,10 +133,10 @@ public class Screen extends JPanel implements Runnable{
 			img.resetSprnz();
 		}
 
-		if (threadVarianza.isAlive()) {
-			//Lo mismo que con el thread de la esperanza, pero para el cálculo de la varianza
-			threadVarianza.stop();
-			img.resetVrnz();
+		if (threadDesvio.isAlive()) {
+			//Lo mismo que con el thread de la esperanza, pero para el cálculo del desvío
+			threadDesvio.stop();
+			img.resetDvio();
 		}
 	}
 
@@ -215,12 +214,12 @@ public class Screen extends JPanel implements Runnable{
 				g.drawString(" Esperanza: " + esperanzaAMostrar, imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*2);
 			}
 
-            if (varianzaAMostrar == Double.NEGATIVE_INFINITY){
+            if (desvioAMostrar == Double.NEGATIVE_INFINITY){
 				g.drawString(" Varianza: calculando...", imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*3);
 				g.drawString(" Desvío: calculando... ", imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*4);
 			}else {
-				g.drawString(" Varianza: " + varianzaAMostrar, imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*3);
-				g.drawString(" Desvío: " + Math.sqrt(varianzaAMostrar), imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*4);
+				g.drawString(" Varianza: " + Math.pow(desvioAMostrar, 2), imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*3);
+				g.drawString(" Desvío: " + desvioAMostrar, imagenWidth / ESCALA_IMAGEN + espaceX, yInicial + espaceY*4);
 			}
 			g.drawString(" Entropía sin memoria: "+img.entropiaSinMemoria() , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial+espaceY*5);
             g.drawString(" Entropía con memoria: "+img.entropiaConMemoria() , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial+espaceY*6);
@@ -274,7 +273,7 @@ public class Screen extends JPanel implements Runnable{
 
 					//Hice click en un botón, por lo que quiero calcular las estadísticas para otro bloque,
 					//con lo que reseteo los valores que está mostrando la GUI actualmente
-					Screen.esperanzaAMostrar = Double.NEGATIVE_INFINITY; Screen.varianzaAMostrar = Double.NEGATIVE_INFINITY;
+					Screen.esperanzaAMostrar = Double.NEGATIVE_INFINITY; Screen.desvioAMostrar = Double.NEGATIVE_INFINITY;
 
 					Screen.img = imagenes.get(i);
 
@@ -282,11 +281,11 @@ public class Screen extends JPanel implements Runnable{
 						Screen.esperanzaAMostrar = Screen.img.esperanza();
 						Screen.sem.release(); //Indico que hay una novedad para repintar el JPanel
 					});
-					threadVarianza = new Thread(() -> {
-						Screen.varianzaAMostrar = Screen.img.varianza();
+					threadDesvio = new Thread(() -> {
+						Screen.desvioAMostrar = Screen.img.desvio();
 						Screen.sem.release(); //Indico que hay una novedad para repintar el JPanel
 					});
-					threadEsperanza.start(); threadVarianza.start();
+					threadEsperanza.start(); threadDesvio.start();
 
 	                frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
 	                frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);

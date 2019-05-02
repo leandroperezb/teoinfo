@@ -18,6 +18,7 @@ public class Imagen extends JPanel{
     private FuenteMarkoviana fuente;
     private double sprnz = Double.NEGATIVE_INFINITY;
     private double vrnz = Double.NEGATIVE_INFINITY;
+    private double dvio = Double.NEGATIVE_INFINITY;
     private double entropiaConMemoria = Double.NEGATIVE_INFINITY;
     protected final int CANTIDADCOLORES = 256;
 
@@ -177,11 +178,21 @@ public class Imagen extends JPanel{
     public void resetVrnz(){
         vrnz = Double.NEGATIVE_INFINITY;
     }
+
+    public void resetDvio(){
+        dvio = Double.NEGATIVE_INFINITY;
+    }
     
     public double varianza() {
     	if (vrnz == Double.NEGATIVE_INFINITY)
     		vrnz = fuente.varianza(getColor(0, 0));
     	return vrnz;
+    }
+
+    public double desvio() {
+        if (dvio == Double.NEGATIVE_INFINITY)
+            dvio = fuente.desvio(getColor(0, 0));
+        return dvio;
     }
     
     public void setX(double x) {
