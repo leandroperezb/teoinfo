@@ -26,6 +26,10 @@ public class Main {
     static JLabel actualEsperanza;
     static JLabel actualVarianza;
 
+    static JButton setearEpsilons = null;
+    static JButton addImagen = null;
+    static JButton guardarInfo = null;
+
     static void mostrarHistograma(JFrame frame, DefaultIntervalXYDataset dataset, int i) {
         JFreeChart histograma = ChartFactory.createHistogram("Histograma "+i, "Intensidad de color:",
                 "Repeticiones" , dataset);
@@ -88,6 +92,31 @@ public class Main {
         }
     }
 
+    private static void generarArchivos(JFrame frame){
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Seleccione una carpeta donde guardar los archivos");
+        fileChooser.setApproveButtonText("Seleccionar");
+        fileChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
+        fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+        int result = fileChooser.showOpenDialog(frame);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            new Thread( () -> {
+                setearEpsilons.setEnabled(false); addImagen.setEnabled(false); guardarInfo.setEnabled(false);
+                String directorio = fileChooser.getSelectedFile().getAbsolutePath();
+                TrabajoPractico.incisoA(directorio);
+                TrabajoPractico.incisoC(directorio);
+                TrabajoPractico.incisoD(directorio);
+
+                JOptionPane.showMessageDialog(null,
+                        "Archivos guardados correctamente",
+                        "",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                setearEpsilons.setEnabled(true); addImagen.setEnabled(true); guardarInfo.setEnabled(true);
+            }).start();
+        }
+    }
+
     private static void crearPanelLateral(JPanel panelLateral) {
         DecimalFormat format = new DecimalFormat("#,###.#######################################" +
                 "#############################################################################" +
@@ -145,9 +174,9 @@ public class Main {
         panelLateral.add(panelVarianza, constraints);
 
         JPanel panelBoton = new JPanel(); panelBoton.setLayout(new GridBagLayout());
-            JButton boton = new JButton("Setear nuevos épsilons");
+            setearEpsilons = new JButton("Setear nuevos épsilons");
             constraints.gridy = 0; constraints.ipady = 0;
-            panelBoton.add(boton, constraints);
+            panelBoton.add(setearEpsilons, constraints);
 
             JPanel nota = new JPanel();
             nota.add(new JLabel("<html><center><small>(Aborta cálculos en ejecución<br>y borra " +
@@ -157,7 +186,7 @@ public class Main {
             panelBoton.add(nota, constraints);
 
             //Al clickear el botón, actualizar los épsilons
-            boton.addActionListener( (evt) -> {
+            setearEpsilons.addActionListener( (evt) -> {
                     try{
                         FuenteMarkoviana.epsilonDesvio = Math.abs(epsilonVarianza.getDoubleValue());
                     }catch (ParseException e) {
@@ -190,14 +219,15 @@ public class Main {
         
 		//boton de guardar datos
         JPanel panelGuardarDatos = new JPanel();
-		JButton guardarInfo = new JButton("<html><h1>Guardar datos</h1></html>");
+		guardarInfo = new JButton("<html><h1>Generar archivos</h1></html>");
+        guardarInfo.addActionListener( (evt) -> generarArchivos(frame) );
 		panelGuardarDatos.add(guardarInfo);
 		constraints.gridy = 4;
 		panelLateral.add(panelGuardarDatos, constraints);
         
        //boton de cargar imagen
         JPanel panelCargaImagen = new JPanel();
-		JButton addImagen = new JButton("<html><h1>Abrir imagen</h1></html>");
+		addImagen = new JButton("<html><h1>Abrir imagen</h1></html>");
 		addImagen.addActionListener( (evt) -> abrirArchivo(frame) );
 		panelCargaImagen.add(addImagen);
 		constraints.gridy = 5;

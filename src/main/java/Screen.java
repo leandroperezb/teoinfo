@@ -12,7 +12,7 @@ import javax.swing.JPanel;
 
 public class Screen extends JPanel implements Runnable{
 	static int ESCALA_IMAGEN = 4;
-	private static List<Imagen> imagenes;
+	static List<Imagen> imagenes;
 	static Point mseOver;
 	private static Point mseClick;
 	static Screen sc = null; //Workaround para entrar a la instancia desde los métodos estáticos que estaban definidos
@@ -35,9 +35,9 @@ public class Screen extends JPanel implements Runnable{
     private static double esperanzaAMostrar;
 	private static double desvioAMostrar;
 
-	private int posEntropiaMayor;
-	private int posEntropiaMenor;
-	private int posEntropiaPromedio;
+	static int posEntropiaMayor;
+	static int posEntropiaMenor;
+	static int posEntropiaPromedio;
 	
 	private final static int FRAME_WIDTH = 800;
     private final static int FRAME_HEIGHT = 700;

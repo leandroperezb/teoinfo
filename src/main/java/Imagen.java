@@ -165,31 +165,31 @@ public class Imagen extends JPanel{
         ImageIO.write(imagen, "bmp", new File(ruta));
     }
     
-    public double esperanza() {
+    public synchronized double esperanza() {
     	if (sprnz == Double.NEGATIVE_INFINITY)
     		sprnz = fuente.esperanza(getColor(0, 0));
     	return sprnz;
     }
 
-    public void resetSprnz(){
+    public synchronized void resetSprnz(){
         sprnz = Double.NEGATIVE_INFINITY;
     }
 
-    public void resetVrnz(){
+    public synchronized void resetVrnz(){
         vrnz = Double.NEGATIVE_INFINITY;
     }
 
-    public void resetDvio(){
+    public synchronized void resetDvio(){
         dvio = Double.NEGATIVE_INFINITY;
     }
     
-    public double varianza() {
+    public synchronized double varianza() {
     	if (vrnz == Double.NEGATIVE_INFINITY)
     		vrnz = fuente.varianza(getColor(0, 0));
     	return vrnz;
     }
 
-    public double desvio() {
+    public synchronized double desvio() {
         if (dvio == Double.NEGATIVE_INFINITY)
             dvio = fuente.desvio(getColor(0, 0));
         return dvio;
