@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -48,12 +49,6 @@ public class Screen extends JPanel implements Runnable{
     private int espaceY = 20;
     private Font fontRefence = new Font("referencia", Font.BOLD, 16);
     private Font fontDat = new Font("datos", Font.BOLD, 12);
-    
-    private static Boton cargarImagen;
-    private int botonCIY = 450;
-    private int botonCIWidth = 175;
-    private int botonCIHeight = 35;
-    private String botonCIName = "Nueva Imagen";
 
 	public Screen(Imagen imagen, JFrame f) {
 		Screen.sc = this;
@@ -194,8 +189,6 @@ public class Screen extends JPanel implements Runnable{
 		botones.get(posEntropiaMenor).remarcar(true, ColorMenorEntropia);
 		botones.get(posEntropiaMayor).remarcar(true, ColorMayorEntropia);
 
-		cargarImagen = new Boton(imagenWidth / ESCALA_IMAGEN + espaceX, botonCIY, botonCIWidth, botonCIHeight);
-		cargarImagen.setName(botonCIName);
 	}
 
 	//dibujo sobre el frame
@@ -208,7 +201,6 @@ public class Screen extends JPanel implements Runnable{
 			botones.get(i).paintComponent(g);
 		}
 
-		cargarImagen.paintComponent(g);
 
 		if (img!= null) {
 			final int yInicial = 100;
@@ -248,14 +240,6 @@ public class Screen extends JPanel implements Runnable{
 		if (point == null) return;
 		mseOver = point;
 
-		if(cargarImagen != null && cargarImagen.contains(point)) {
-			if (bloqueSeleccionado != -1) {
-				bloqueSeleccionado = -1;
-				Screen.sc.repaint();
-			}
-			return;
-		}
-
 		Imagen imagen = Screen.sc.imagen;
 		if (imagen == null) return;
 
@@ -278,11 +262,6 @@ public class Screen extends JPanel implements Runnable{
 	public static void setMseClick(Point point) {
 		if (point == null) return;
 		mseClick = point; Imagen imagen = Screen.sc.imagen;
-
-		if(cargarImagen != null && cargarImagen.contains(point)) {
-			Main.abrirArchivo(frame);
-			return;
-		}
 		
 		if (mseClick.getX() < imagen.getWidth()/ ESCALA_IMAGEN && mseClick.getY() < imagen.getHeight()/ ESCALA_IMAGEN
 				&& mseClick.getX() >= 0 && mseClick.getY() >=0){
