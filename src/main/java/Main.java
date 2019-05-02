@@ -15,6 +15,7 @@ import java.text.ParseException;
 
 
 public class Main {
+	private static JFrame frame;
     private final static int FRAME_WIDTH = 930;
     private final static int FRAME_HEIGHT = 700;
     private final static int FRAME_LOC_X = 250;
@@ -186,10 +187,29 @@ public class Main {
         //elementos en el tope del frame
         constraints.weighty = 1d; constraints.gridy = 3;
         panelEpsilons.add(new JPanel(), constraints);
+        
+		//boton de guardar datos
+        JPanel panelGuardarDatos = new JPanel();
+		JButton guardarInfo = new JButton("<html><h1>Guardar datos</h1></html>");
+		panelGuardarDatos.add(guardarInfo);
+		constraints.gridy = 4;
+		panelEpsilons.add(panelGuardarDatos, constraints);
+        
+       //boton de cargar imagen
+        JPanel panelCargaImagen = new JPanel();
+		JButton addImagen = new JButton("<html><h1>Abrir imagen</h1></html>");
+		addImagen.addActionListener( (evt) -> abrirArchivo(frame) );
+		panelCargaImagen.add(addImagen);
+		constraints.gridy = 5;
+		panelEpsilons.add(panelCargaImagen, constraints);
+		
+
+		
+		
     }
 
     public static void main(String[] args){
-        JFrame frame = new JFrame("Teoría de la información");
+        frame = new JFrame("Teoría de la información");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
         frame.setMinimumSize(new Dimension(930, 600));
