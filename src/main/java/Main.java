@@ -22,21 +22,25 @@ public class Main {
     private final static int FRAME_LOC_Y = 30;
 
     static NumericTextField epsilonEsperanza = null;
-    static NumericTextField epsilonVarianza = null;
+    static NumericTextField epsilonDesvio = null;
     static JLabel actualEsperanza;
-    static JLabel actualVarianza;
+    static JLabel actualDesvio;
 
     static JButton setearEpsilons = null;
     static JButton addImagen = null;
     static JButton guardarInfo = null;
 
-    static void mostrarHistograma(JFrame frame, DefaultIntervalXYDataset dataset, int i) {
+    static JFreeChart generarHistograma(JFrame frame, DefaultIntervalXYDataset dataset, int i, boolean mostrar) {
         JFreeChart histograma = ChartFactory.createHistogram("Histograma "+i, "Intensidad de color:",
                 "Repeticiones" , dataset);
         ChartPanel chartPanel = new ChartPanel( histograma );
-        frame.getContentPane().add(chartPanel);
-        frame.setVisible(true);
+        if (mostrar) {
+            frame.getContentPane().add(chartPanel);
+            frame.setVisible(true);
+        }
+        return histograma;
     }
+
     
     static void abrirArchivo(JFrame frame) {
         JFileChooser fileChooser = new JFileChooser();
@@ -103,16 +107,14 @@ public class Main {
             new Thread( () -> {
                 setearEpsilons.setEnabled(false); addImagen.setEnabled(false); guardarInfo.setEnabled(false);
                 String directorio = fileChooser.getSelectedFile().getAbsolutePath();
+
                 TrabajoPractico.incisoA(directorio);
+                TrabajoPractico.incisoB(directorio);
                 TrabajoPractico.incisoC(directorio);
                 TrabajoPractico.incisoD(directorio);
 
-                JOptionPane.showMessageDialog(null,
-                        "Archivos guardados correctamente",
-                        "",
-                        JOptionPane.INFORMATION_MESSAGE);
-
                 setearEpsilons.setEnabled(true); addImagen.setEnabled(true); guardarInfo.setEnabled(true);
+                JOptionPane.showMessageDialog(null, "Archivos guardados correctamente", "", JOptionPane.INFORMATION_MESSAGE);
             }).start();
         }
     }
@@ -150,28 +152,28 @@ public class Main {
             panelEsperanza.add(panelActualEsperanza, constraints);
 
 
-        JPanel panelVarianza = new JPanel(); panelVarianza.setLayout(new GridBagLayout());
+        JPanel panelDesvio = new JPanel(); panelDesvio.setLayout(new GridBagLayout());
             label = new JLabel("Épsilon para el desvío:");
-            epsilonVarianza = new NumericTextField(15, format);
-            epsilonVarianza.setValue(FuenteMarkoviana.epsilonDesvio);
+            epsilonDesvio = new NumericTextField(15, format);
+            epsilonDesvio.setValue(FuenteMarkoviana.epsilonDesvio);
 
             constraints.gridy = 0; constraints.gridx = 0;
-            panelVarianza.add(label, constraints);
+            panelDesvio.add(label, constraints);
 
-            JPanel panelActualVarianza = new JPanel();
-            actualVarianza = new JLabel("(Valor actual: " + FuenteMarkoviana.epsilonDesvio + ")");
-            panelActualVarianza.add(actualVarianza);
+            JPanel panelActualDesvio = new JPanel();
+            actualDesvio = new JLabel("(Valor actual: " + FuenteMarkoviana.epsilonDesvio + ")");
+            panelActualDesvio.add(actualDesvio);
 
             constraints.gridy = 1;
-            panelVarianza.add(epsilonVarianza, constraints);
+            panelDesvio.add(epsilonDesvio, constraints);
             constraints.gridy = 2;
-            panelVarianza.add(panelActualVarianza, constraints);
+            panelDesvio.add(panelActualDesvio, constraints);
 
 
         constraints.gridy = 0; constraints.gridx = 0; constraints.ipady = 80;
         panelLateral.add(panelEsperanza, constraints);
         constraints.gridy = 1;
-        panelLateral.add(panelVarianza, constraints);
+        panelLateral.add(panelDesvio, constraints);
 
         JPanel panelBoton = new JPanel(); panelBoton.setLayout(new GridBagLayout());
             setearEpsilons = new JButton("Setear nuevos épsilons");
@@ -188,12 +190,12 @@ public class Main {
             //Al clickear el botón, actualizar los épsilons
             setearEpsilons.addActionListener( (evt) -> {
                     try{
-                        FuenteMarkoviana.epsilonDesvio = Math.abs(epsilonVarianza.getDoubleValue());
+                        FuenteMarkoviana.epsilonDesvio = Math.abs(epsilonDesvio.getDoubleValue());
                     }catch (ParseException e) {
                         FuenteMarkoviana.epsilonDesvio = 0d;
                     }finally {
-                        epsilonVarianza.setValue(FuenteMarkoviana.epsilonDesvio);
-                        actualVarianza.setText("(Valor actual: " + FuenteMarkoviana.epsilonDesvio + ")");
+                        epsilonDesvio.setValue(FuenteMarkoviana.epsilonDesvio);
+                        actualDesvio.setText("(Valor actual: " + FuenteMarkoviana.epsilonDesvio + ")");
                     }
                     try{
                         FuenteMarkoviana.epsilonEsperanza = Math.abs(epsilonEsperanza.getDoubleValue());

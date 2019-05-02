@@ -1,10 +1,17 @@
+import org.jfree.chart.ChartUtils;
+import org.jfree.chart.JFreeChart;
+
+import java.awt.*;
 import java.io.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class TrabajoPractico {
     public static void incisoA(String directorio){
         BufferedWriter output = null;
         try {
-            output = new BufferedWriter(new FileWriter(directorio + "/salida iniciso A.txt"));
+            output = new BufferedWriter(new FileWriter(directorio + "/iniciso A.txt"));
 
             for (int i = 0; i < Screen.imagenes.size(); i++){ //Por cada bloque de la imagen
                 output.write("Bloque " + (i+1) + "\n");
@@ -28,6 +35,85 @@ public class TrabajoPractico {
         }
     }
 
+    public static void incisoB(String directorio) {
+        JFreeChart histogramaMayorEntropia = Main.generarHistograma(null,
+                Screen.imagenes.get(Screen.posEntropiaMayor).hacerDatasetRepeticiones(),
+                Screen.posEntropiaMayor + 1, false);
+        JFreeChart histogramaMenorEntropia = Main.generarHistograma(null,
+                Screen.imagenes.get(Screen.posEntropiaMenor).hacerDatasetRepeticiones(),
+                Screen.posEntropiaMenor + 1, false);
+        JFreeChart histogramaPromedioEntropia = Main.generarHistograma(null,
+                Screen.imagenes.get(Screen.posEntropiaPromedio).hacerDatasetRepeticiones(),
+                Screen.posEntropiaPromedio + 1, false);
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int width = (int) screenSize.getWidth();
+        int height = (int) screenSize.getHeight();
+
+        try {
+            ChartUtils.saveChartAsPNG(new File(directorio + "/inciso B - Histograma bloque mayor entropía.png"),
+                  histogramaMayorEntropia, width, height);
+            ChartUtils.saveChartAsPNG(new File(directorio + "/inciso B - Histograma bloque menor entropía.png"),
+                    histogramaMenorEntropia, width, height);
+            ChartUtils.saveChartAsPNG(new File(directorio + "/inciso B - Histograma bloque de entropía más cercana al promedio.png"),
+                    histogramaPromedioEntropia, width, height);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void incisoC(String directorio){
+        directorio = directorio + "/inciso C - ";
+        cargarMatrizEnArchivo(directorio + "Bloque de mayor entropía.txt", Screen.posEntropiaMayor);
+        cargarMatrizEnArchivo(directorio + "Bloque de menor entropía.txt", Screen.posEntropiaMenor);
+    }
+
+
+    public static void incisoD(String directorio){
+        BufferedWriter output = null;
+        ExecutorService executor = Executors.newCachedThreadPool();
+        try {
+            output = new BufferedWriter(new FileWriter(directorio + "/salida iniciso D.txt"));
+
+            @SuppressWarnings("unchecked")
+            Future<Double>[] desvios = (Future<Double>[]) new Future<?>[Screen.imagenes.size()];
+            @SuppressWarnings("unchecked")
+            Future<Double>[] medias = (Future<Double>[]) new Future<?>[Screen.imagenes.size()];
+
+
+            //Mandar a ejecutar concurrentemente todos los cálculo necesarios
+            for (int i = 0; i < Screen.imagenes.size(); i++){
+                final int im = i;
+                desvios[i] = executor.submit( () -> Screen.imagenes.get(im).desvio());
+                medias[i] = executor.submit( () -> Screen.imagenes.get(im).esperanza());
+            }
+
+
+            //Escribir resultados en el archivo
+            for (int i = 0; i < Screen.imagenes.size(); i++){ //Por cada bloque de la imagen
+                output.write("Bloque " + (i+1) + ":\n");
+                output.write("Desvío: " + desvios[i].get() + "\n");
+                output.write("Valor medio: " + medias[i].get() + "\n");
+                output.write("\n\n");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        executor.shutdown();
+    }
+
+
+
     private static void cargarMatrizEnArchivo(String ruta, int posicionBloque){
         BufferedWriter output = null;
         try {
@@ -46,78 +132,6 @@ public class TrabajoPractico {
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
-            if (output != null) {
-                try {
-                    output.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-
-    public static void incisoC(String directorio){
-        directorio = directorio + "/inciso C - ";
-        cargarMatrizEnArchivo(directorio + "Bloque de mayor entropía.txt", Screen.posEntropiaMayor);
-        cargarMatrizEnArchivo(directorio + "Bloque de menor entropía.txt", Screen.posEntropiaMenor);
-    }
-
-
-    public static void incisoD(String directorio){
-        BufferedWriter output = null;
-        try {
-            output = new BufferedWriter(new FileWriter(directorio + "/salida iniciso D.txt"));
-            double[] desvios = new double[Screen.imagenes.size()];
-            double[] esperanzas = new double[Screen.imagenes.size()];
-
-            int cantCores = Runtime.getRuntime().availableProcessors();
-
-            int cantPorThread = Screen.imagenes.size() / cantCores;
-
-            Thread[] threads = new Thread[cantCores];
-
-            int init = 0;
-            for (int i = 0; i < cantCores - 1; i++){
-                final int inicio = init;
-                threads[i] = new Thread( () -> {
-                    for (int j = inicio; j < inicio + cantPorThread; j++){
-                        desvios[j] = Screen.imagenes.get(j).desvio();
-                        esperanzas[j] = Screen.imagenes.get(j).esperanza();
-                    }
-                });
-                threads[i].start();
-                init += cantPorThread;
-            }
-            final int inicio = init;
-            threads[cantCores - 1] = new Thread( () -> {
-                for (int i = inicio; i < Screen.imagenes.size(); i++){
-                    desvios[i] = Screen.imagenes.get(i).desvio();
-                    esperanzas[i] = Screen.imagenes.get(i).esperanza();
-                }
-            });
-            threads[cantCores - 1].start();
-
-            for (int i = 0; i < threads.length; i++){
-                threads[i].join();
-            }
-
-
-            //Lo que realmente había que hacer
-            for (int i = 0; i < Screen.imagenes.size(); i++){ //Por cada bloque de la imagen
-                output.write("Bloque " + (i+1) + "\n");
-                output.write("Desvío: " + Screen.imagenes.get(i).desvio() + "\n");
-                output.write("Valor medio: " + Screen.imagenes.get(i).esperanza() + "\n");
-                output.write("\n\n");
-            }
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
             if (output != null) {
                 try {
                     output.close();

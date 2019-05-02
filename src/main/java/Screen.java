@@ -297,7 +297,7 @@ public class Screen extends JPanel implements Runnable{
 	                frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
 	                
 	                new Thread( () -> {
-	                	Main.mostrarHistograma(frame, img.hacerDatasetRepeticiones(), imagenAnalizada);
+	                	Main.generarHistograma(frame, img.hacerDatasetRepeticiones(), imagenAnalizada, true);
 	                }).start();
 	                
 	                numIm = i+1;
