@@ -168,15 +168,21 @@ public class Screen extends JPanel implements Runnable{
 	private void inicializarBotones() {
 		botones.clear();
 		int contImagenes = 0;
-		for(int j = 0; j< imagen.getHeight(); j += Imagen.TAMANIOBLOQUECUADRANTE)
+		int x = 0; int y = 0;
+		for(int j = 0; j< imagen.getHeight(); j += Imagen.TAMANIOBLOQUECUADRANTE) {
+			int valorY = 0;
 			for(int i = 0; i< imagen.getWidth(); i += Imagen.TAMANIOBLOQUECUADRANTE){
-				botones.add(new Boton(i/ ESCALA_IMAGEN,
-						j/ ESCALA_IMAGEN,
+				botones.add(new Boton(x,
+						y,
 						imagenes.get(contImagenes).getWidth()/ ESCALA_IMAGEN,
 						imagenes.get(contImagenes).getHeight()/ ESCALA_IMAGEN));
-
+				x += imagenes.get(contImagenes).getWidth()/ ESCALA_IMAGEN;
+				valorY = imagenes.get(contImagenes).getHeight()/ ESCALA_IMAGEN;
 				contImagenes++;
 			}
+			y += valorY;
+			x = 0;
+	}
 
 
 		//cargar imagen en botones

@@ -133,7 +133,7 @@ public class Main {
 
 
         JPanel panelEsperanza = new JPanel(); panelEsperanza.setLayout(new GridBagLayout());
-            JLabel label = new JLabel("Épsilon para la esperanza:");
+            JLabel label = new JLabel("Épsilon para la media:");
             epsilonEsperanza = new NumericTextField(15, format);
             epsilonEsperanza.setValue(FuenteMarkoviana.epsilonEsperanza);
 
