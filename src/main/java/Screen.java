@@ -48,6 +48,15 @@ public class Screen extends JPanel implements Runnable{
     private int espaceY = 20;
     private Font fontRefence = new Font("referencia", Font.BOLD, 16);
     private Font fontDat = new Font("datos", Font.BOLD, 12);
+    
+    private static Boton mostrarHistograma;
+    private int botonMHY = 450;
+    private int botonMHW = 205;
+    private int botonMHH = 35;
+    private String botonMHName = "Mostrar Histograma";
+    
+    private static int imagenAnalizada = -1;
+    
 
 	public Screen(Imagen imagen, JFrame f) {
 		Screen.sc = this;
@@ -194,6 +203,8 @@ public class Screen extends JPanel implements Runnable{
 		botones.get(posEntropiaMenor).remarcar(true, ColorMenorEntropia);
 		botones.get(posEntropiaMayor).remarcar(true, ColorMayorEntropia);
 
+		mostrarHistograma = new Boton(imagenWidth / ESCALA_IMAGEN + espaceX, botonMHY, botonMHW, botonMHH);
+		mostrarHistograma.setName(botonMHName);
 	}
 
 	//dibujo sobre el frame
@@ -206,7 +217,9 @@ public class Screen extends JPanel implements Runnable{
 			botones.get(i).paintComponent(g);
 		}
 
-
+		if(imagenAnalizada != -1)
+			mostrarHistograma.paintComponent(g);
+		
 		if (img!= null) {
 			final int yInicial = 100;
             g.setColor(Color.black);
@@ -245,6 +258,14 @@ public class Screen extends JPanel implements Runnable{
 		if (point == null) return;
 		mseOver = point;
 
+		if(mostrarHistograma.contains(point)) {
+			if (bloqueSeleccionado != -1) {
+				bloqueSeleccionado = -1;
+				Screen.sc.repaint();
+			}
+			return;
+		}
+		
 		Imagen imagen = Screen.sc.imagen;
 		if (imagen == null) return;
 
@@ -268,13 +289,24 @@ public class Screen extends JPanel implements Runnable{
 		if (point == null) return;
 		mseClick = point; Imagen imagen = Screen.sc.imagen;
 		
+		//boton de mostrar histograma
+		if(mostrarHistograma.contains(point)) {
+            new Thread( () -> {
+            	JFrame frame = new JFrame("Imagen analizada "+imagenAnalizada);
+                frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+                frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
+            	Main.generarHistograma(frame, img.hacerDatasetRepeticiones(), imagenAnalizada, true);
+            }).start();
+			return;
+		}
+		
 		if (mseClick.getX() < imagen.getWidth()/ ESCALA_IMAGEN && mseClick.getY() < imagen.getHeight()/ ESCALA_IMAGEN
 				&& mseClick.getX() >= 0 && mseClick.getY() >=0){
 			for(int i=0;i<botones.size();i++) {
 				if(botones.get(i).contains(mseClick)) {
-					int imagenAnalizada = i+1;
-					JFrame frame = new JFrame("Imagen analizada "+imagenAnalizada);
-
+					mostrarHistograma.setEnabled(true);
+					imagenAnalizada = i+1;
+					
 					frenarThreads();
 
 					//Hice click en un botón, por lo que quiero calcular las estadísticas para otro bloque,
@@ -292,13 +324,6 @@ public class Screen extends JPanel implements Runnable{
 						Screen.sem.release(); //Indico que hay una novedad para repintar el JPanel
 					});
 					threadEsperanza.start(); threadDesvio.start();
-
-	                frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-	                frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
-	                
-	                new Thread( () -> {
-	                	Main.generarHistograma(frame, img.hacerDatasetRepeticiones(), imagenAnalizada, true);
-	                }).start();
 	                
 	                numIm = i+1;
 	                break;
