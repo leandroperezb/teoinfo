@@ -55,7 +55,7 @@ public class Screen extends JPanel implements Runnable{
     private int botonMHH = 35;
     private String botonMHName = "Mostrar Histograma";
     
-    private static int imagenAnalizada = -1;
+    private static int imagenAnalizada;
     
 
 	public Screen(Imagen imagen, JFrame f) {
@@ -82,6 +82,7 @@ public class Screen extends JPanel implements Runnable{
 		esperanzaAMostrar = Double.NEGATIVE_INFINITY;
 		desvioAMostrar = Double.NEGATIVE_INFINITY;
 		img = null;
+		imagenAnalizada = -1;
 		repaint();
 	}
 
@@ -118,6 +119,7 @@ public class Screen extends JPanel implements Runnable{
 		this.imagen = imagen;
 		imagenWidth = imagen.getWidth();
 		imagenes = imagen.obtenerCuadrantes();
+		imagenAnalizada = -1;
 		img = null;
 		bloqueSeleccionado = Integer.MIN_VALUE;
 		esperanzaAMostrar = Double.NEGATIVE_INFINITY;
@@ -304,7 +306,6 @@ public class Screen extends JPanel implements Runnable{
 				&& mseClick.getX() >= 0 && mseClick.getY() >=0){
 			for(int i=0;i<botones.size();i++) {
 				if(botones.get(i).contains(mseClick)) {
-					mostrarHistograma.setEnabled(true);
 					imagenAnalizada = i+1;
 					
 					frenarThreads();
