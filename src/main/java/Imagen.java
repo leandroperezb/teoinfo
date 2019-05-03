@@ -169,7 +169,7 @@ public class Imagen extends JPanel{
     }
     
     public synchronized double esperanza() {
-    	if (sprnz == Double.NEGATIVE_INFINITY || resetSprnz)
+    	if (resetSprnz)
     		sprnz = fuente.esperanza(getColor(0, 0));
     	resetSprnz = false;
     	return sprnz;
@@ -186,14 +186,14 @@ public class Imagen extends JPanel{
     }
     
     public synchronized double varianza() {
-    	if (vrnz == Double.NEGATIVE_INFINITY || resetVrnz)
+    	if (resetVrnz)
     		vrnz = fuente.varianza(getColor(0, 0));
     	resetVrnz = false;
     	return vrnz;
     }
 
     public synchronized double desvio() {
-        if (dvio == Double.NEGATIVE_INFINITY || resetDvio)
+        if (resetDvio)
             dvio = fuente.desvio(getColor(0, 0));
         resetDvio = false;
         return dvio;
