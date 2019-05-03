@@ -96,7 +96,7 @@ public class Main {
         }
     }
 
-    private static void generarArchivos(JFrame frame){
+    private static void generarArchivos(JFrame frame, JLabel texto){
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Seleccione una carpeta donde guardar los archivos");
         fileChooser.setApproveButtonText("Seleccionar");
@@ -105,6 +105,7 @@ public class Main {
         int result = fileChooser.showOpenDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
             new Thread( () -> {
+                texto.setVisible(true);
                 setearEpsilons.setEnabled(false); addImagen.setEnabled(false); guardarInfo.setEnabled(false);
                 String directorio = fileChooser.getSelectedFile().getAbsolutePath();
 
@@ -113,6 +114,7 @@ public class Main {
                 TrabajoPractico.incisoC(directorio);
                 TrabajoPractico.incisoD(directorio);
 
+                texto.setVisible(false);
                 setearEpsilons.setEnabled(true); addImagen.setEnabled(true); guardarInfo.setEnabled(true);
                 JOptionPane.showMessageDialog(null, "Archivos guardados correctamente", "", JOptionPane.INFORMATION_MESSAGE);
             }).start();
@@ -213,31 +215,34 @@ public class Main {
         constraints.gridy = 2;
         panelLateral.add(panelBoton, constraints);
 
-
-        //El último elemento es un panel vacío con "weighty" máximo, para que apile al resto de los
-        //elementos en el tope del frame
-        constraints.weighty = 1d; constraints.gridy = 3;
+        //Panel vacío para "espaciar"
+        constraints.gridy = 3; constraints.weighty = 0.3333333333d;
         panelLateral.add(new JPanel(), constraints);
         
 		//boton de guardar datos
-        JPanel panelGuardarDatos = new JPanel();
-		guardarInfo = new JButton("<html><h1>Generar archivos</h1></html>");
-        guardarInfo.addActionListener( (evt) -> generarArchivos(frame) );
-		panelGuardarDatos.add(guardarInfo);
-		constraints.gridy = 4;
+        JPanel panelGuardarDatos = new JPanel(); panelGuardarDatos.setLayout(new GridBagLayout());
+            JPanel panelGuardandoDatos = new JPanel();
+            JLabel textoGuardando = new JLabel("Generando archivos. Espere por favor..."); textoGuardando.setVisible(false);
+            panelGuardandoDatos.add(textoGuardando);
+            guardarInfo = new JButton("<html><h1>Generar archivos</h1></html>");
+            guardarInfo.addActionListener( (evt) -> generarArchivos(frame, textoGuardando) );
+            constraints.gridy = 0; constraints.weighty = 0d;
+            panelGuardarDatos.add(guardarInfo, constraints);
+            constraints.gridy = 1; constraints.weightx = 1d;
+            panelGuardarDatos.add(panelGuardandoDatos, constraints);
+
+		constraints.gridy = 4; constraints.weighty = 0.3333333333d; constraints.weightx = 0d;
 		panelLateral.add(panelGuardarDatos, constraints);
         
        //boton de cargar imagen
-        JPanel panelCargaImagen = new JPanel();
+        JPanel panelCargaImagen = new JPanel(); panelCargaImagen.setLayout(new GridBagLayout());
 		addImagen = new JButton("<html><h1>Abrir imagen</h1></html>");
 		addImagen.addActionListener( (evt) -> abrirArchivo(frame) );
-		panelCargaImagen.add(addImagen);
-		constraints.gridy = 5;
+		constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+		panelCargaImagen.add(addImagen, constraints);
+		constraints.gridy = 5; constraints.weighty = 0.3333333333d; constraints.weightx = 0d;
 		panelLateral.add(panelCargaImagen, constraints);
-		
 
-		
-		
     }
 
     public static void main(String[] args){
@@ -246,7 +251,6 @@ public class Main {
         frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
         frame.setMinimumSize(new Dimension(930, 600));
         frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
-
 
         JButton boton = new JButton("<html><h1>Abrir imagen</h1></html>");
         boton.setPreferredSize(new Dimension(300, 80));
