@@ -19,6 +19,9 @@ public class Imagen extends JPanel{
     private double sprnz = Double.NEGATIVE_INFINITY;
     private double vrnz = Double.NEGATIVE_INFINITY;
     private double dvio = Double.NEGATIVE_INFINITY;
+    private boolean resetSprnz = true;
+    private boolean resetVrnz = true;
+    private boolean resetDvio = true;
     private double entropiaConMemoria = Double.NEGATIVE_INFINITY;
     protected final int CANTIDADCOLORES = 256;
 
@@ -166,32 +169,33 @@ public class Imagen extends JPanel{
     }
     
     public synchronized double esperanza() {
-    	if (sprnz == Double.NEGATIVE_INFINITY)
+    	if (sprnz == Double.NEGATIVE_INFINITY || resetSprnz)
     		sprnz = fuente.esperanza(getColor(0, 0));
+    	resetSprnz = false;
     	return sprnz;
     }
 
-    public synchronized void resetSprnz(){
-        sprnz = Double.NEGATIVE_INFINITY;
+    public void resetSprnz(){  resetSprnz = true;  }
+
+    public void resetVrnz(){
+        resetVrnz = true;
     }
 
-    public synchronized void resetVrnz(){
-        vrnz = Double.NEGATIVE_INFINITY;
-    }
-
-    public synchronized void resetDvio(){
-        dvio = Double.NEGATIVE_INFINITY;
+    public void resetDvio(){
+        resetDvio = true;
     }
     
     public synchronized double varianza() {
-    	if (vrnz == Double.NEGATIVE_INFINITY)
+    	if (vrnz == Double.NEGATIVE_INFINITY || resetVrnz)
     		vrnz = fuente.varianza(getColor(0, 0));
+    	resetVrnz = false;
     	return vrnz;
     }
 
     public synchronized double desvio() {
-        if (dvio == Double.NEGATIVE_INFINITY)
+        if (dvio == Double.NEGATIVE_INFINITY || resetDvio)
             dvio = fuente.desvio(getColor(0, 0));
+        resetDvio = false;
         return dvio;
     }
     

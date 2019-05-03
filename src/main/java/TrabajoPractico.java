@@ -72,7 +72,7 @@ public class TrabajoPractico {
 
     public static void incisoD(String directorio){
         BufferedWriter output = null;
-        ExecutorService executor = Executors.newCachedThreadPool();
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         try {
             output = new BufferedWriter(new FileWriter(directorio + "/salida iniciso D.txt"));
 
