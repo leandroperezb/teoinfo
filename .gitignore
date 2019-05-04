@@ -39,4 +39,5 @@ settings.gradle
 *.iml
 *.mf
 *.txt
+*.png
 out/

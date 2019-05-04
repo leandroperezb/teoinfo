@@ -31,7 +31,7 @@ public class Main {
     static JButton guardarInfo = null;
 
     static JFreeChart generarHistograma(JFrame frame, DefaultIntervalXYDataset dataset, int i, boolean mostrar) {
-        JFreeChart histograma = ChartFactory.createHistogram("Histograma "+i, "Intensidad de color:",
+        JFreeChart histograma = ChartFactory.createHistogram("Histograma del bloque N°"+i, "Intensidad de color:",
                 "Repeticiones" , dataset);
         ChartPanel chartPanel = new ChartPanel( histograma );
         if (mostrar) {
@@ -178,7 +178,7 @@ public class Main {
         panelLateral.add(panelDesvio, constraints);
 
         JPanel panelBoton = new JPanel(); panelBoton.setLayout(new GridBagLayout());
-            setearEpsilons = new JButton("Setear nuevos épsilons");
+            setearEpsilons = new JButton("Establecer nuevos épsilons");
             constraints.gridy = 0; constraints.ipady = 0;
             panelBoton.add(setearEpsilons, constraints);
 

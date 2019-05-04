@@ -294,7 +294,7 @@ public class Screen extends JPanel implements Runnable{
 		//boton de mostrar histograma
 		if(mostrarHistograma.contains(point)) {
             new Thread( () -> {
-            	JFrame frame = new JFrame("Imagen analizada "+imagenAnalizada);
+            	JFrame frame = new JFrame("Histograma N°"+imagenAnalizada);
                 frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
                 frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
             	Main.generarHistograma(frame, img.hacerDatasetRepeticiones(), imagenAnalizada, true);

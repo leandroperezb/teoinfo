@@ -1,16 +1,31 @@
 public class FuenteMarkoviana {
     protected double[][] probabilidades;
+    protected double[][] probAcumuladas;
     protected double[] probabilidadesEstacionarias;
     private final int ITERACIONES = 10000;
     static double epsilonEsperanza = 0.00000001d;
     static double epsilonVarianza = 0.00001d;
     static double epsilonDesvio = 0.0000001d;
 
+
+    private void cargarProbAcumuladas(){
+        probAcumuladas = new double[probabilidades.length][probabilidades.length];
+        for(int i = 0; i < probabilidades.length; i++) {
+            double contador = 0f;
+            for (int j = 0; j < probabilidades.length; j++) {
+                contador += probabilidades[i][j];
+                probAcumuladas[i][j] = contador;
+            }
+        }
+    }
+
     public FuenteMarkoviana(double[][] probabilidades){
         this.probabilidades = probabilidades;
+        cargarProbAcumuladas();
 
         for (int i = 0; i < probabilidades.length; i++){
             for (int j = 0; j < probabilidades.length; j++){
+                //Generar probabilidades estacionarias partiendo de un primer símbolo existente
                 if (probabilidades[i][j] != 0d){
                     this.probabilidadesEstacionarias = vectorEstacionario(i);
                     return;
@@ -23,16 +38,15 @@ public class FuenteMarkoviana {
 
     public FuenteMarkoviana(double[][] probabilidades, double[] probabilidadesEstacionarias){
         this.probabilidades = probabilidades;
+        cargarProbAcumuladas();
         this.probabilidadesEstacionarias = probabilidadesEstacionarias;
     }
 
     public int darSimbolo(int n){
         if (n >= probabilidades.length || n < 0) throw new IllegalArgumentException("Símbolo dado como argumento fuera de rango");
         double prob = Math.random();
-        double contador = 0f;
-        for (int i = 0; i < probabilidades.length; i++){
-            contador += probabilidades[n][i];
-            if (prob < contador)
+        for (int i = 0; i < probAcumuladas.length; i++){
+            if (prob < probAcumuladas[n][i])
                 return i;
         }
         return probabilidades.length - 1;
@@ -90,10 +104,10 @@ public class FuenteMarkoviana {
     }
 
 
-    public double esperanza(int simboloInicial){
+    public double esperanza(){
         long tiradas = 0; long sumatoria = 0;
         double esperanzaVieja = 0d; double esperanza = 0d;
-        int simboloAnterior = simboloInicial;
+        int simboloAnterior = this.darSimbolo();
 
         while (tiradas < ITERACIONES || !converge(esperanzaVieja, esperanza, epsilonEsperanza)){
             tiradas++;
@@ -108,10 +122,10 @@ public class FuenteMarkoviana {
     }
 
 
-    public double varianza(int simboloInicial){    	
+    public double varianza(){
         long tiradas = 0; long sumatoriaEsperanza = 0; long sumatoriaVarianza = 0;
         double varianzaVieja = 0d; double varianza = 0d;
-        int simboloAnterior = simboloInicial;
+        int simboloAnterior = this.darSimbolo();
 
         while (tiradas < ITERACIONES || !converge(varianzaVieja, varianza, epsilonVarianza)){
             tiradas++;
@@ -127,10 +141,10 @@ public class FuenteMarkoviana {
     }
 
 
-    public double desvio(int simboloInicial){
+    public double desvio(){
         long tiradas = 0; long sumatoriaEsperanza = 0; long sumatoriaDesvio = 0;
         double desvioViejo = 0d; double desvio = 0d;
-        int simboloAnterior = simboloInicial;
+        int simboloAnterior = this.darSimbolo();
 
         while (tiradas < ITERACIONES || !converge(desvioViejo, desvio, epsilonDesvio)){
             tiradas++;
