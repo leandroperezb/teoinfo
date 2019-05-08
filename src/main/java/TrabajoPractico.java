@@ -77,26 +77,29 @@ public class TrabajoPractico {
             output = new BufferedWriter(new FileWriter(directorio + "/salida iniciso D.txt"));
 
             @SuppressWarnings("unchecked")
-            Future<Double>[] desvios = (Future<Double>[]) new Future<?>[Screen.imagenes.size()];
+            Future<Double>[] desvios = (Future<Double>[]) new Future<?>[2];
             @SuppressWarnings("unchecked")
-            Future<Double>[] medias = (Future<Double>[]) new Future<?>[Screen.imagenes.size()];
+            Future<Double>[] medias = (Future<Double>[]) new Future<?>[2];
 
 
             //Mandar a ejecutar concurrentemente todos los cálculo necesarios
-            for (int i = 0; i < Screen.imagenes.size(); i++){
-                final int im = i;
-                desvios[i] = executor.submit( () -> Screen.imagenes.get(im).desvio());
-                medias[i] = executor.submit( () -> Screen.imagenes.get(im).esperanza());
-            }
+            final int mayorEntropia = Screen.posEntropiaMayor;
+            desvios[0] = executor.submit( () -> Screen.imagenes.get(mayorEntropia).desvio());
+            medias[0] = executor.submit( () -> Screen.imagenes.get(mayorEntropia).esperanza());
+            final int menorEntropia = Screen.posEntropiaMenor;
+            desvios[1] = executor.submit( () -> Screen.imagenes.get(menorEntropia).desvio());
+            medias[1] = executor.submit( () -> Screen.imagenes.get(menorEntropia).esperanza());
 
 
             //Escribir resultados en el archivo
-            for (int i = 0; i < Screen.imagenes.size(); i++){ //Por cada bloque de la imagen
-                output.write("Bloque " + (i+1) + ":\n");
-                output.write("Desvío: " + desvios[i].get() + "\n");
-                output.write("Valor medio: " + medias[i].get() + "\n");
-                output.write("\n\n");
-            }
+            output.write("Bloque " + (mayorEntropia+1) + " (el de mayor entropía):\n");
+            output.write("Desvío: " + desvios[0].get() + "\n");
+            output.write("Valor medio: " + medias[0].get() + "\n");
+            output.write("\n\n");
+
+            output.write("Bloque " + (menorEntropia+1) + " (el de menor entropía):\n");
+            output.write("Desvío: " + desvios[1].get() + "\n");
+            output.write("Valor medio: " + medias[1].get() + "\n");
 
         } catch (Exception e) {
             e.printStackTrace();

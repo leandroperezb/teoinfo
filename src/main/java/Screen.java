@@ -152,7 +152,7 @@ public class Screen extends JPanel implements Runnable{
 	}
 
 	protected void recalcularEscala(){
-		double heightLibre = this.getHeight(); double widthLibre = this.getWidth() - 300d;
+		double heightLibre = this.getHeight() - 25; double widthLibre = this.getWidth() - 300d;
 		double width = imagen.getWidth(); double height = imagen.getHeight();
 		double factor = 0d;
 		if (width > widthLibre){
@@ -219,6 +219,8 @@ public class Screen extends JPanel implements Runnable{
 			botones.get(i).paintComponent(g);
 		}
 
+		g.drawString("(Haga click en un bloque para obtener sus datos)" , 20, this.getHeight() - 20);
+
 		if(imagenAnalizada != -1)
 			mostrarHistograma.paintComponent(g);
 		
@@ -226,7 +228,7 @@ public class Screen extends JPanel implements Runnable{
 			final int yInicial = 100;
             g.setColor(Color.black);
             g.setFont(fontRefence);
-			g.drawString(" Datos de imagen: "+numIm , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial);
+			g.drawString(" Datos del bloque N°"+numIm + ":" , imagenWidth/ ESCALA_IMAGEN +espaceX, yInicial);
 
 			g.setFont(fontDat);
             if (esperanzaAMostrar == Double.NEGATIVE_INFINITY){
