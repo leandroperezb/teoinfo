@@ -58,10 +58,19 @@ public class Imagen extends JPanel{
         }
 
         //Cargar en el dataset los valores obtenidos
+        double[] y = new double[repeticiones.size()];
+        double[] x = new double[repeticiones.size()];
+        double[] minX = new double[repeticiones.size()];
+        double [] maxX = new double[repeticiones.size()];
+        int contador = 0;
         for(Integer i: repeticiones.keySet()) {
-            dataset.addSeries(i,
-                    new double[][]{{i}, {i - 0.5d}, {i + 0.5d}, {repeticiones.get(i)}, {repeticiones.get(i)}, {repeticiones.get(i)}});
+            y[contador] = repeticiones.get(i);
+            x[contador] = i; minX[contador] = i - 0.5d; maxX[contador] = i + 0.5d;
+            contador++;
         }
+
+        dataset.addSeries("Intensidades de color",
+                new double[][]{x, minX, maxX, y, y, y});
 
         return dataset;
     }

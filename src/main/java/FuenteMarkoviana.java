@@ -2,7 +2,8 @@ public class FuenteMarkoviana {
     protected double[][] probabilidades;
     protected double[][] probAcumuladas;
     protected double[] probabilidadesEstacionarias;
-    private final int ITERACIONES = 10000000;
+    private final int ITERACIONES = 10000;
+    private final int ITERACIONES_DESVIO = 10000000;
     static double epsilonEsperanza = 0.00000001d;
     static double epsilonVarianza = 0.00001d;
     static double epsilonDesvio = 0.0000001d;
@@ -127,7 +128,7 @@ public class FuenteMarkoviana {
         double varianzaVieja = 0d; double varianza = 0d;
         int simboloAnterior = this.darSimbolo();
 
-        while (tiradas < ITERACIONES || !converge(varianzaVieja, varianza, epsilonVarianza)){
+        while (tiradas < ITERACIONES_DESVIO || !converge(varianzaVieja, varianza, epsilonVarianza)){
             tiradas++;
             simboloAnterior = this.darSimbolo(simboloAnterior);
             sumatoriaEsperanza += simboloAnterior;
@@ -146,7 +147,7 @@ public class FuenteMarkoviana {
         double desvioViejo = 0d; double desvio = 0d;
         int simboloAnterior = this.darSimbolo();
 
-        while (tiradas < ITERACIONES || !converge(desvioViejo, desvio, epsilonDesvio)){
+        while (tiradas < ITERACIONES_DESVIO || !converge(desvioViejo, desvio, epsilonDesvio)){
             tiradas++;
             simboloAnterior = this.darSimbolo(simboloAnterior);
             sumatoriaEsperanza += simboloAnterior;
