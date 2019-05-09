@@ -2,7 +2,7 @@ public class FuenteMarkoviana {
     protected double[][] probabilidades;
     protected double[][] probAcumuladas;
     protected double[] probabilidadesEstacionarias;
-    private final int ITERACIONES = 10000;
+    private final int ITERACIONES = 10000000;
     static double epsilonEsperanza = 0.00000001d;
     static double epsilonVarianza = 0.00001d;
     static double epsilonDesvio = 0.0000001d;
