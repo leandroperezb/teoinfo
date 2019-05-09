@@ -9,6 +9,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Imagen extends JPanel{
     public BufferedImage imagen;
@@ -24,6 +26,11 @@ public class Imagen extends JPanel{
     private boolean resetDvio = true;
     private double entropiaConMemoria = Double.NEGATIVE_INFINITY;
     protected final int CANTIDADCOLORES = 256;
+
+    //Usados sus monitores, no como locks, por si se frenan threads en medio de un lock/unlock
+    private Lock mutSprnz = new ReentrantLock();
+    private Lock mutDvio = new ReentrantLock();
+    private Lock mutVrnz = new ReentrantLock();
 
     public Imagen(BufferedImage imagen){
         if (imagen == null) throw new IllegalArgumentException("No se permite un buffer nulo");
@@ -168,11 +175,13 @@ public class Imagen extends JPanel{
         ImageIO.write(imagen, "bmp", new File(ruta));
     }
     
-    public synchronized double esperanza() {
-    	if (resetSprnz)
-    		sprnz = fuente.esperanza();
-    	resetSprnz = false;
-    	return sprnz;
+    public double esperanza() {
+        synchronized (mutSprnz) {
+            if (resetSprnz)
+                sprnz = fuente.esperanza();
+            resetSprnz = false;
+            return sprnz;
+        }
     }
 
     public void resetSprnz(){  resetSprnz = true;  }
@@ -185,18 +194,22 @@ public class Imagen extends JPanel{
         resetDvio = true;
     }
     
-    public synchronized double varianza() {
-    	if (resetVrnz)
-    		vrnz = fuente.varianza();
-    	resetVrnz = false;
-    	return vrnz;
+    public double varianza() {
+        synchronized (mutVrnz) {
+            if (resetVrnz)
+                vrnz = fuente.varianza();
+            resetVrnz = false;
+            return vrnz;
+        }
     }
 
-    public synchronized double desvio() {
-        if (resetDvio)
-            dvio = fuente.desvio();
-        resetDvio = false;
-        return dvio;
+    public double desvio() {
+        synchronized (mutDvio) {
+            if (resetDvio)
+                dvio = fuente.desvio();
+            resetDvio = false;
+            return dvio;
+        }
     }
     
     public void setX(double x) {
