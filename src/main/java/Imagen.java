@@ -1,3 +1,5 @@
+import org.jfree.data.xy.DefaultIntervalXYDataset;
+
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
@@ -7,6 +9,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Imagen extends JPanel{
     public BufferedImage imagen;
@@ -16,15 +20,59 @@ public class Imagen extends JPanel{
     private FuenteMarkoviana fuente;
     private double sprnz = Double.NEGATIVE_INFINITY;
     private double vrnz = Double.NEGATIVE_INFINITY;
+    private double dvio = Double.NEGATIVE_INFINITY;
+    private boolean resetSprnz = true;
+    private boolean resetVrnz = true;
+    private boolean resetDvio = true;
+    private double entropiaConMemoria = Double.NEGATIVE_INFINITY;
     protected final int CANTIDADCOLORES = 256;
+
+    //Usados sus monitores, no como locks, por si se frenan threads en medio de un lock/unlock
+    private Lock mutSprnz = new ReentrantLock();
+    private Lock mutDvio = new ReentrantLock();
+    private Lock mutVrnz = new ReentrantLock();
 
     public Imagen(BufferedImage imagen){
         if (imagen == null) throw new IllegalArgumentException("No se permite un buffer nulo");
         this.imagen = imagen;
-		
-		double[][] probabilidades = probabilidadesCondicionales();
-        fuente = new FuenteMarkoviana(probabilidades);
 
+        fuente = new FuenteMarkoviana(probabilidadesCondicionales(), probabilidadesSimples());
+
+    }
+
+    DefaultIntervalXYDataset hacerDatasetRepeticiones(){
+        DefaultIntervalXYDataset dataset = new DefaultIntervalXYDataset();
+
+        Map<Integer, Integer> repeticiones = new HashMap<>();
+
+        //Anotar colores existentes y contar las repeticiones (cantidad de apariciones)
+        for (int y = 0; y < this.getHeight(); y++){
+            for (int x = 0; x < this.getWidth(); x++){
+                int color = this.getColor(x, y);
+                if (repeticiones.containsKey(color)) {
+                    repeticiones.put(color, repeticiones.get(color) + 1);
+                }else{
+                    repeticiones.put(color, 1);
+                }
+            }
+        }
+
+        //Cargar en el dataset los valores obtenidos
+        double[] y = new double[repeticiones.size()];
+        double[] x = new double[repeticiones.size()];
+        double[] minX = new double[repeticiones.size()];
+        double [] maxX = new double[repeticiones.size()];
+        int contador = 0;
+        for(Integer i: repeticiones.keySet()) {
+            y[contador] = repeticiones.get(i);
+            x[contador] = i; minX[contador] = i - 0.5d; maxX[contador] = i + 0.5d;
+            contador++;
+        }
+
+        dataset.addSeries("Intensidades de color",
+                new double[][]{x, minX, maxX, y, y, y});
+
+        return dataset;
     }
 
     public int getWidth(){
@@ -75,7 +123,7 @@ public class Imagen extends JPanel{
             for (int x = 0; x < this.getWidth(); x++){
                 int color = this.getColor(x, y);
                 if (anterior >= 0) {
-                    probabilidades[color][anterior]++;
+                    probabilidades[anterior][color]++;
                     totales[anterior]++;
                 }
                 anterior = color;
@@ -85,8 +133,8 @@ public class Imagen extends JPanel{
         //Calcular las probabilidades de transición condicionales
         for (int i = 0; i < CANTIDADCOLORES; i++) {
             for (int j = 0; j < CANTIDADCOLORES; j++) {
-                if (totales[j] != 0)
-                    probabilidades[i][j] /= totales[j];
+                if (totales[i] != 0)
+                    probabilidades[i][j] /= totales[i];
             }
         }
 
@@ -121,17 +169,14 @@ public class Imagen extends JPanel{
     }
 
 
-    public double entropiaSimple(){
-        double[] probabilidades = this.probabilidadesSimples();
+    public double entropiaSinMemoria(){
+        return fuente.entropiaSinMemoria();
+    }
 
-        double entropia = 0d;
-
-        for (int i = 0; i < probabilidades.length; i++){
-            if (probabilidades[i] != 0)
-                entropia += probabilidades[i] * Math.log(probabilidades[i]) / Math.log(2d);
-        }
-
-        return -entropia;
+    public double entropiaConMemoria(){
+        if (entropiaConMemoria == Double.NEGATIVE_INFINITY)
+            entropiaConMemoria = fuente.entropiaConMemoria();
+        return entropiaConMemoria;
     }
 
 
@@ -140,23 +185,40 @@ public class Imagen extends JPanel{
     }
     
     public double esperanza() {
-    	if (sprnz == Double.NEGATIVE_INFINITY)
-    		sprnz = fuente.esperanza(getColor(0, 0));
-    	return sprnz;
+        synchronized (mutSprnz) {
+            if (resetSprnz)
+                sprnz = fuente.esperanza();
+            resetSprnz = false;
+            return sprnz;
+        }
     }
 
-    public void resetSprnz(){
-        sprnz = Double.NEGATIVE_INFINITY;
-    }
+    public void resetSprnz(){  resetSprnz = true;  }
 
     public void resetVrnz(){
-        vrnz = Double.NEGATIVE_INFINITY;
+        resetVrnz = true;
+    }
+
+    public void resetDvio(){
+        resetDvio = true;
     }
     
     public double varianza() {
-    	if (vrnz == Double.NEGATIVE_INFINITY)
-    		vrnz = fuente.varianza(getColor(0, 0));
-    	return vrnz;
+        synchronized (mutVrnz) {
+            if (resetVrnz)
+                vrnz = fuente.varianza();
+            resetVrnz = false;
+            return vrnz;
+        }
+    }
+
+    public double desvio() {
+        synchronized (mutDvio) {
+            if (resetDvio)
+                dvio = fuente.desvio();
+            resetDvio = false;
+            return dvio;
+        }
     }
     
     public void setX(double x) {
