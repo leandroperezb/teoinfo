@@ -54,10 +54,11 @@ public class Codificaciones {
         byte buffer = 0;
         int bufferPos = 0;
         int i = 0;
+        Iterator<Boolean> it = input.iterator();
         while (i < input.size()) {
             buffer = (byte) (buffer << 1);
             bufferPos++;
-            if (input.get(i)) {
+            if (it.next()) {
                 buffer = (byte) (buffer | 1);
             }
 
