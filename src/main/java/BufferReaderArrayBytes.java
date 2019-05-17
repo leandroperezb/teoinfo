@@ -1,8 +1,8 @@
 public class BufferReaderArrayBytes {
     private byte[] entrada;
     private int bytePos = 0;
-    private int arrayPos = 0;
-    public BufferReaderArrayBytes(byte[] entrada){this.entrada = entrada;}
+    private int arrayPos;
+    public BufferReaderArrayBytes(byte[] entrada, int pos){this.entrada = entrada; this.arrayPos = pos;}
 
     public boolean leerBoolean(){
         byte b = entrada[arrayPos];
@@ -35,9 +35,16 @@ public class BufferReaderArrayBytes {
         int resultado = 0;
         for (int i = 0; i < 4; i++){
             byte b = this.leerByte();
-            resultado = ((resultado << 8) | b);
+            resultado = ((resultado << 8) | (b & 255));
         }
         return resultado;
+    }
+
+    public void finalizarLecturaDeByte(){
+        if (bytePos != 0) {
+            arrayPos++;
+            bytePos = 0;
+        }
     }
 
 }
