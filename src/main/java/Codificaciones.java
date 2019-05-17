@@ -6,7 +6,17 @@ import java.util.*;
 
 public class Codificaciones {
 
-    public static char[] decodeSequence(String path) {
+    private static byte[] intToBytes(int entero){
+        byte[] bytes = new byte[4];
+        bytes[0] = (byte) (entero >> 24);
+        bytes[1] = (byte) ((entero << 8) >> 24);
+        bytes[2] = (byte) ((entero << 16) >> 24);
+        bytes[3] = (byte) entero;
+        return bytes;
+    }
+
+    //SIN USO DE MOMENTO. CÓDIGO DE EJEMPLO
+    /*public static char[] decodeSequence(String path) {
         char[] restoredSequence = null;
         try {
             byte[] inputSequence = Files.readAllBytes(new File(path).toPath());
@@ -47,14 +57,16 @@ public class Codificaciones {
         }
 
         return restoredSequence;
-    }
+    }*/
 
     private static byte[] convertBooleanListToByteArray(List<Boolean> input) {
-        List<Byte> lista = new ArrayList<>();
         byte buffer = 0;
         int bufferPos = 0;
         int i = 0;
         Iterator<Boolean> it = input.iterator();
+        byte[] resultado = new byte[(int) Math.ceil(input.size() / 8d)];
+        int resultadoPos = 0;
+
         while (i < input.size()) {
             buffer = (byte) (buffer << 1);
             bufferPos++;
@@ -63,7 +75,8 @@ public class Codificaciones {
             }
 
             if (bufferPos == 8) {
-                lista.add(buffer);
+                resultado[resultadoPos] = buffer;
+                resultadoPos++;
                 buffer = 0;
                 bufferPos = 0;
             }
@@ -72,48 +85,75 @@ public class Codificaciones {
 
         if ((bufferPos < 8) && (bufferPos != 0)) {
             buffer = (byte) (buffer << (8 - bufferPos));
-            lista.add(buffer);
+            resultado[resultadoPos] = buffer;
         }
 
+        return resultado;
+    }
 
-        byte[] ret = new byte[lista.size()];
-        for (int j = 0; j < ret.length; j++) {
-            ret[j] = lista.get(j);
+    private static byte[] convertByteListToPrimitives(List<Byte> input) {
+        byte[] ret = new byte[input.size()];
+        int i = 0;
+        for (Byte b: input){
+            ret[i] = b;
+            i++;
         }
-
         return ret;
     }
 
-    public static void guardarEnArchivo(String path, List<Boolean> mensajeCodificado){
-        try {
-            byte[] byteArray = convertBooleanListToByteArray(mensajeCodificado);
-            int tamanioEntero = (int) Math.ceil(mensajeCodificado.size() / 8d);
-            byte[] tamanio = new byte[4];
-            tamanio[0] = (byte) (tamanioEntero >> 24);
-            tamanio[1] = (byte) ((tamanioEntero << 8) >> 24);
-            tamanio[2] = (byte) ((tamanioEntero << 16) >> 24);
-            tamanio[3] = (byte) ((tamanioEntero << 24) >> 24);
+    private static byte[] frecuenciasCodificadas(Imagen img){
+        List<Byte> lista = new ArrayList<>(255*5);
+        Map<Byte, Integer> frecuencias = new HashMap<>();
 
-            FileOutputStream fos = new FileOutputStream(path);
-            fos.write(tamanio);
-            fos.write(byteArray);
-            fos.close();
+        for (int y = 0; y < img.getHeight(); y++){
+            for (int x = 0; x < img.getWidth(); x++){
+                byte color = (byte) img.getColor(x, y);
+                if (frecuencias.containsKey(color)){
+                    frecuencias.put(color, frecuencias.get(color) + 1);
+                }else{
+                    frecuencias.put(color, 1);
+                }
+            }
+        }
 
+        lista.add((byte) frecuencias.size()); //Anotar la cantidad de pares <Símbolo, Frecuencia> que hay
+
+        for (Map.Entry<Byte, Integer> entry: frecuencias.entrySet()){
+            lista.add(entry.getKey());
+            for (byte valor: intToBytes(entry.getValue())){
+                lista.add(valor);
+            }
+        }
+
+        return convertByteListToPrimitives(lista);
+    }
+
+    public static void guardarEnArchivo(String path, Imagen img){
+        List<Boolean> codificado = codificarConHuffman(img);
+        byte[] imagenCodificada = convertBooleanListToByteArray(codificado);
+        byte[] frecuencias = frecuenciasCodificadas(img);
+
+        try(FileOutputStream fos = new FileOutputStream(path)) {
+            fos.write(intToBytes(img.getWidth()));
+            fos.write(intToBytes(img.getHeight()));
+            fos.write(frecuencias);
+            fos.write(imagenCodificada);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+
     public static List<Boolean> codificarConHuffman(Imagen img){
-        List<Boolean> salida = new LinkedList<>();
+        List<Boolean> salida = new ArrayList<>(img.getWidth() * img.getHeight()*2);
         Map<Integer, boolean[]> codificaciones = codificacionHuffman(img.probabilidadesSimples()).codificaciones;
 
         for (int y = 0; y < img.getHeight(); y++) {
             for (int x = 0; x < img.getWidth(); x++) {
                 int color = img.getColor(x, y);
                 boolean[] codificacion = codificaciones.get(color);
-                for (int i = 0; i < codificacion.length; i++){
-                    salida.add(codificacion[i]);
+                for (boolean b: codificacion){
+                    salida.add(b);
                 }
             }
         }
@@ -122,11 +162,13 @@ public class Codificaciones {
     }
 
 
-    public static String codificarConRLC(Imagen img, int minimoDeCorrida) {
-        StringBuilder salida = new StringBuilder();
+    public static byte[] codificarConRLC(Imagen img) {
+        List<Byte> salida = new ArrayList<>(img.getWidth() * img.getHeight() * 2);
 
         int colorAnterior = -1;
         int contador = 1;
+        int bufferPos = 0;
+        byte buffer = 0;
         for (int y = 0; y < img.getHeight(); y++) {
             for (int x = 0; x < img.getWidth(); x++) {
                 int color = img.getColor(x, y);
@@ -135,15 +177,52 @@ public class Codificaciones {
                 } else {
                     //Si vino un color nuevo, codificar la "corrida" del anterior y resetear contadores
                     if (colorAnterior > -1) {
-                        if (contador < minimoDeCorrida) {
-                            salida.append("0:"); //Indica que no se codifica con un número de longitud
-                            for (int k = 0; k < contador; k++) {
-                                //Si son pocas apariciones, directamente escribir el símbolo tantas veces como aparezca
-                                salida.append(String.valueOf(colorAnterior) + "|");
+                        if (contador == 1) {
+                            buffer = (byte) (buffer << 1); //Indicar que no se codifica con un número de longitud
+                            bufferPos++;
+
+                            if (bufferPos == 8) { //Si se llenó el buffer, guardar
+                                salida.add(buffer);
+                                buffer = 0;
+                                bufferPos = 0;
                             }
+
+                            if (bufferPos != 0) { //Si el color se escribe "a medias" en dos bytes
+                                buffer = (byte) (buffer << (8 - bufferPos));
+                                buffer = (byte) (buffer | (colorAnterior >> bufferPos)); //Guardar al final la primera parte del color
+                                salida.add(buffer);
+
+                                buffer = (byte) ( (colorAnterior << (32 - bufferPos)) >> (32 - bufferPos) ); //Guardar al principio la última parte del color
+                            }else{ //Si el color entra entero en un nuevo byte
+                                salida.add((byte) colorAnterior);
+                            }
+
                         } else {
-                            //Si son varias las apariciones, codificar como par <símbolo, longitud>
-                            salida.append("1:" + String.valueOf(colorAnterior) + "|" + String.valueOf(contador) + "|");
+                            buffer = (byte) ((buffer << 1) | 1); //Indicar que se codifica con un número de longitud
+                            bufferPos++;
+
+                            if (bufferPos == 8) { //Si se llenó el buffer, guardar
+                                salida.add(buffer);
+                                buffer = 0;
+                                bufferPos = 0;
+                            }
+
+                            if (bufferPos != 0) { //Si el color se escribe "a medias" en dos bytes
+                                buffer = (byte) (buffer << (8 - bufferPos));
+                                buffer = (byte) (buffer | (colorAnterior >> bufferPos)); //Guardar al final la primera parte del color
+                                salida.add(buffer);
+
+                                buffer = (byte) ( (colorAnterior << (32 - bufferPos)) >> (32 - bufferPos) ); //Guardar al principio la última parte del color
+                                buffer = (byte) (buffer << (8 - bufferPos));
+                                buffer = (byte) (buffer | (contador >> bufferPos)); //Guardar al final la primera parte del contador
+                                salida.add(buffer);
+
+                                buffer = (byte) ( (contador << (32 - bufferPos)) >> (32 - bufferPos) ); //Guardar al principio la última parte del contador
+                            }else{
+                                //Si el color entra entero en un nuevo byte
+                                salida.add((byte) colorAnterior);
+                                salida.add((byte) contador);
+                            }
                         }
                     }
                     contador = 1;
@@ -152,17 +231,61 @@ public class Codificaciones {
             }
         }
 
-        //La codificación para el último color
-        if (contador < minimoDeCorrida) {
-            salida.append("0:");
-            for (int k = 0; k < contador; k++) {
-                salida.append(String.valueOf(colorAnterior) + "|");
+        //La codificación para el último color (sí, hay DUP de código)
+        if (contador == 1) {
+            buffer = (byte) (buffer << 1); //Indicar que no se codifica con un número de longitud
+            bufferPos++;
+
+            if (bufferPos == 8) { //Si se llenó el buffer, guardar
+                salida.add(buffer);
+                buffer = 0;
+                bufferPos = 0;
             }
+
+            if (bufferPos != 0) { //Si el color se escribe "a medias" en dos bytes
+                buffer = (byte) (buffer << (8 - bufferPos));
+                buffer = (byte) (buffer | (colorAnterior >> bufferPos)); //Guardar al final la primera parte del color
+                salida.add(buffer);
+
+                buffer = (byte) ( (colorAnterior << (32 - bufferPos)) >> (32 - bufferPos) ); //Guardar al principio la última parte del color
+            }else{ //Si el color entra entero en un nuevo byte
+                salida.add((byte) colorAnterior);
+            }
+
         } else {
-            salida.append("1:" + String.valueOf(colorAnterior) + "|" + String.valueOf(contador) + "|");
+            buffer = (byte) ((buffer << 1) | 1); //Indicar que se codifica con un número de longitud
+            bufferPos++;
+
+            if (bufferPos == 8) { //Si se llenó el buffer, guardar
+                salida.add(buffer);
+                buffer = 0;
+                bufferPos = 0;
+            }
+
+            if (bufferPos != 0) { //Si el color se escribe "a medias" en dos bytes
+                buffer = (byte) (buffer << (8 - bufferPos));
+                buffer = (byte) (buffer | (colorAnterior >> bufferPos)); //Guardar al final la primera parte del color
+                salida.add(buffer);
+
+                buffer = (byte) ( (colorAnterior << (32 - bufferPos)) >> (32 - bufferPos) ); //Guardar al principio la última parte del color
+                buffer = (byte) (buffer << (8 - bufferPos));
+                buffer = (byte) (buffer | (contador >> bufferPos)); //Guardar al final la primera parte del contador
+                salida.add(buffer);
+
+                buffer = (byte) ( (contador << (32 - bufferPos)) >> (32 - bufferPos) ); //Guardar al principio la última parte del contador
+            }else{
+                //Si el color entra entero en un nuevo byte
+                salida.add((byte) colorAnterior);
+                salida.add((byte) contador);
+            }
         }
 
-        return salida.toString();
+        if ((bufferPos < 8) && (bufferPos != 0)) { //Si no se llenó el buffer, rellenar
+            buffer = (byte) (buffer << (8 - bufferPos));
+        }
+        salida.add(buffer);
+
+        return convertByteListToPrimitives(salida);
     }
 
 
