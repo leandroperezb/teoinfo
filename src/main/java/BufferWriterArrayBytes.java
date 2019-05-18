@@ -23,7 +23,7 @@ public class BufferWriterArrayBytes {
     public void agregarByte(byte b){
         if (bufferPos != 0) { //Si el byte se escribe "a medias" en dos buffers
             buffer = (byte) (buffer << (8 - bufferPos));
-            buffer = (byte) (buffer | (b >> bufferPos)); //Guardar al final la primera parte del byte a guardar
+            buffer = (byte) (buffer | ((b & 255) >> bufferPos)); //Guardar al final la primera parte del byte a guardar
             lista.add(buffer);
 
             buffer = (byte) ( (b << (32 - bufferPos)) >> (32 - bufferPos) ); //Guardar al principio la última parte del byte a guardar
@@ -45,7 +45,14 @@ public class BufferWriterArrayBytes {
         }
     }
 
+
     public byte[] getBytes(){
-        return Codificaciones.convertByteListToPrimitives(lista);
+        byte[] resultado = new byte[lista.size()];
+        int i = 0;
+        for (Byte b: lista){
+            resultado[i] = b;
+            i++;
+        }
+        return resultado;
     }
 }

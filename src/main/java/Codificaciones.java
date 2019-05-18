@@ -8,6 +8,113 @@ import java.util.*;
 import java.util.List;
 
 public class Codificaciones {
+    static double UMBRAL = 4d;
+
+    public static Imagen levantarArchivo(String path){
+        Imagen imagenDecodificada = null;
+        try {
+            BufferReaderArrayBytes buffer = new BufferReaderArrayBytes( Files.readAllBytes(new File(path).toPath()), 0 );
+            //Leer la cantidad de bloques
+            int cantidadBloques = buffer.leerInt();
+
+            //Leer dimensiones de la imagen
+            int widthImagen = buffer.leerInt();
+            int heightImagen = buffer.leerInt();
+
+            //Crear una nueva imagen de esas dimensiones
+            BufferedImage img = new BufferedImage(widthImagen, heightImagen, BufferedImage.TYPE_BYTE_GRAY);
+            imagenDecodificada = new Imagen(img);
+
+            //Leer las codificaciones utilizadas en cada bloque
+            boolean[] codificadoConHuffman = new boolean[cantidadBloques];
+            for (int i = 0; i < cantidadBloques; i++){
+                codificadoConHuffman[i] = buffer.leerBoolean();
+            }
+            buffer.finalizarLecturaDeByte();
+
+            int x = 0; int y = 0; //Coordenadas para saber en qué lugar de la imagen se está escribiendo cada bloque
+
+            //Por cada bloque de imagen
+            for (int i = 0; i < cantidadBloques; i++){
+                //Leer sus dimensiones (ancho y alto)
+                int width = buffer.leerInt();
+                int height = buffer.leerInt();
+
+                //Decodificar con el método que corresponda
+                if (codificadoConHuffman[i]) {
+                    NodoHuffman raizArbol = codificacionHuffman(decodificarFrecuencias(buffer)).raiz;
+                    decodificarConHuffman(imagenDecodificada, x, y, width, height, raizArbol, buffer);
+                }else{
+                    decodificarConRLC(imagenDecodificada, x, y, width, height, buffer);
+                }
+                buffer.finalizarLecturaDeByte();
+
+                //Escribir el próximo bloque al lado del actual
+                x += width;
+                //Si la coordenada x supera al ancho de la imagen entera, escribir el próximo bloque en la siguiente fila
+                if (x >= widthImagen){
+                    x = 0; y+= height;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return imagenDecodificada;
+    }
+
+    public static void guardarEnArchivo(String path, Imagen imagen){
+        List<Imagen> imagenes = imagen.obtenerCuadrantes();
+        byte[][] imagenCodificada = new byte[imagenes.size()][];
+        byte[][] frecuencias = new byte[imagenes.size()][];
+
+        BufferWriterArrayBytes codificadosConHuffman = new BufferWriterArrayBytes(new ArrayList<>());
+
+        int contador = 0;
+        for (Imagen img: imagenes) {
+            //Arbitrariamente, se elige usar Huffman si la entropía de la imagen supera un determinado umbral
+            if (img.entropiaConMemoria() > UMBRAL) {
+                imagenCodificada[contador] = codificarConHuffman(img);
+                frecuencias[contador] = codificarFrecuencias(img);
+                //Indicar que este bloque se codificó con Huffman
+                codificadosConHuffman.agregarBoolean(true);
+            }else{
+                imagenCodificada[contador] = codificarConRLC(img);
+                //Indicar que este bloque no se codificó con Huffman (fue con RLC)
+                codificadosConHuffman.agregarBoolean(false);
+            }
+            contador++;
+        }
+        codificadosConHuffman.finalizarEscritura();
+
+
+        try(FileOutputStream fos = new FileOutputStream(path)) {
+            //Escribir cantidad de bloques
+            fos.write(intToBytes(imagenes.size()));
+            //Escribir las dimensiones de la imagen
+            fos.write(intToBytes(imagen.getWidth()));
+            fos.write(intToBytes(imagen.getHeight()));
+
+            /*Escribir las codificaciones utilizadas para cada bloque (una serie de bits en los que cada uno indica la
+              codificación utilizada para el bloque correspondiente a su posición)*/
+            fos.write(codificadosConHuffman.getBytes());
+
+            //Por cada bloque de la imagen
+            for (int i = 0; i < imagenes.size(); i++) {
+                //Escribir sus dimensiones (ancho y alto)
+                fos.write(intToBytes(imagenes.get(i).getWidth()));
+                fos.write(intToBytes(imagenes.get(i).getHeight()));
+
+                //Si se codificó con Huffman, guardar la lista de las frecuencias de apariciones de los símbolos
+                if (imagenes.get(i).entropiaConMemoria() > UMBRAL) {
+                    fos.write(frecuencias[i]);
+                }
+                fos.write(imagenCodificada[i]);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static byte[] intToBytes(int entero){
         byte[] bytes = new byte[4];
@@ -18,41 +125,12 @@ public class Codificaciones {
         return bytes;
     }
 
-    private static byte[] convertBooleanListToByteArray(List<Boolean> input) {
-        BufferWriterArrayBytes buffer = new BufferWriterArrayBytes(new ArrayList<>(input.size() / 8));
-        for (Boolean b: input){
-            buffer.agregarBoolean(b);
-        }
-        buffer.finalizarEscritura();
-        return buffer.getBytes();
-    }
 
-    public static byte[] convertByteListToPrimitives(List<Byte> input) {
-        byte[] ret = new byte[input.size()];
-        int i = 0;
-        for (Byte b: input){
-            ret[i] = b;
-            i++;
-        }
-        return ret;
-    }
+    private static int[] getFrecuencias(Imagen img){
+        int[] resultado = new int[256];
+        for (int i = 0; i < 256; i++){resultado[i] = 0;}
 
-    private static double[] getFrecuencias(Imagen img){
-        double[] resultado = new double[255];
-        for (int i = 0; i < 255; i++){resultado[i] = 0d;}
-
-        Map<Byte, Integer> frecuencias = new TreeMap<>();
-
-        for (int y = 0; y < img.getHeight(); y++){
-            for (int x = 0; x < img.getWidth(); x++){
-                byte color = (byte) img.getColor(x, y);
-                if (frecuencias.containsKey(color)){
-                    frecuencias.put(color, frecuencias.get(color) + 1);
-                }else{
-                    frecuencias.put(color, 1);
-                }
-            }
-        }
+        Map<Byte, Integer> frecuencias = getMapaFrecuencias(img);
 
         for (Map.Entry<Byte, Integer> entry: frecuencias.entrySet()){
             resultado[entry.getKey() & 255] = entry.getValue();
@@ -61,36 +139,41 @@ public class Codificaciones {
         return resultado;
     }
 
-    private static byte[] frecuenciasCodificadas(Imagen img){
-        List<Byte> lista = new ArrayList<>(255*5);
+    private static byte[] codificarFrecuencias(Imagen img){
+        BufferWriterArrayBytes buffer = new BufferWriterArrayBytes(new ArrayList<>(256*5));
+        Map<Byte, Integer> frecuencias = getMapaFrecuencias(img);
+
+        buffer.agregarByte((byte) frecuencias.size()); //Anotar la cantidad de pares <Símbolo, Frecuencia> que hay
+
+        for (Map.Entry<Byte, Integer> entry: frecuencias.entrySet()){
+            buffer.agregarByte(entry.getKey()); //Agregar la intensidad de color
+            buffer.agregarInt(entry.getValue()); //Agregar la cantidad de apariciones
+        }
+
+        buffer.finalizarEscritura();
+
+        return buffer.getBytes();
+    }
+
+    private static Map<Byte, Integer> getMapaFrecuencias(Imagen img) {
         Map<Byte, Integer> frecuencias = new TreeMap<>();
 
-        for (int y = 0; y < img.getHeight(); y++){
-            for (int x = 0; x < img.getWidth(); x++){
+        for (int y = 0; y < img.getHeight(); y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
                 byte color = (byte) img.getColor(x, y);
-                if (frecuencias.containsKey(color)){
+                if (frecuencias.containsKey(color)) {
                     frecuencias.put(color, frecuencias.get(color) + 1);
-                }else{
+                } else {
                     frecuencias.put(color, 1);
                 }
             }
         }
-
-        lista.add((byte) frecuencias.size()); //Anotar la cantidad de pares <Símbolo, Frecuencia> que hay
-
-        for (Map.Entry<Byte, Integer> entry: frecuencias.entrySet()){
-            lista.add(entry.getKey());
-            for (byte valor: intToBytes(entry.getValue())){
-                lista.add(valor);
-            }
-        }
-
-        return convertByteListToPrimitives(lista);
+        return frecuencias;
     }
 
-    private static double[] calcularFrecuencias(BufferReaderArrayBytes buffer){
-        double[] frecuencias = new double[255];
-        for (int i = 0; i < 255; i++){frecuencias[i] = 0d;}
+    private static int[] decodificarFrecuencias(BufferReaderArrayBytes buffer){
+        int[] frecuencias = new int[256];
+        for (int i = 0; i < 256; i++){frecuencias[i] = 0;}
         int cantidad = buffer.leerByte() & 255;
         for (int i = 0; i < cantidad; i++){
             int color = buffer.leerByte() & 255;
@@ -100,82 +183,81 @@ public class Codificaciones {
         return frecuencias;
     }
 
-    private static void decodificarHuffman(BufferedImage img, NodoHuffman raiz, BufferReaderArrayBytes buffer){
-        for (int y = 0; y < img.getHeight(); y++){
-            for (int x = 0; x < img.getWidth(); x++){
+    private static void decodificarConHuffman(Imagen img, int xInicial, int yInicial, int width, int height, NodoHuffman raiz, BufferReaderArrayBytes buffer){
+        //Para cada pixel de la imagen
+        for (int y = 0; y < height; y++){
+            for (int x = 0; x < width; x++){
+                //Pararse en la raíz del árbol de codificaciones obtenido anteriormente
                 NodoHuffman nodo = raiz;
-                while (nodo.simbolo == null){
+                while (nodo.simbolo == null){ //Mientras no se haya llegado a un nodo hoja (a un símbolo concreto)
+
+                    //Leer el siguiente bit y moverse a derecha o a izquierda en el árbol de acuerdo al valor de éste
                     boolean bit = buffer.leerBoolean();
                     if (bit)
                         nodo = nodo.h2;
                     else
                         nodo = nodo.h1;
                 }
-                img.setRGB(x, y, (new Color(nodo.simbolo, nodo.simbolo, nodo.simbolo).getRGB()));
+
+                //Cuando se haya alcanzado un nodo hoja (se haya salido del while) pintar el pixel con el valor del símbolo
+                img.setColor(x + xInicial, y + yInicial, nodo.simbolo);
             }
         }
     }
 
-    public static List<Imagen> levantarArchivo(String path){
-        List<Imagen> imagenes = new ArrayList<>();
-        try {
-            BufferReaderArrayBytes buffer = new BufferReaderArrayBytes( Files.readAllBytes(new File(path).toPath()), 0 );
-            int cantidadBloques = buffer.leerInt();
-            for (int i = 0; i < cantidadBloques; i++){
-                int width = buffer.leerInt();
-                int height = buffer.leerInt();
-                BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-                NodoHuffman raizArbol = codificacionHuffman(calcularFrecuencias(buffer)).raiz;
-                decodificarHuffman(img, raizArbol, buffer);
-                imagenes.add(new Imagen(img));
-                buffer.finalizarLecturaDeByte();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        return imagenes;
-    }
+    public static byte[] codificarConHuffman(Imagen img){
+        BufferWriterArrayBytes buffer = new BufferWriterArrayBytes(new ArrayList<>(img.getWidth() * img.getHeight()*2));
 
-    public static void guardarEnArchivo(String path, List<Imagen> imagenes){
-        byte[][] imagenCodificada = new byte[imagenes.size()][];
-        byte[][] frecuencias = new byte[imagenes.size()][];
-        int contador = 0;
-        for (Imagen img: imagenes) {
-            imagenCodificada[contador] = convertBooleanListToByteArray(codificarConHuffman(img));
-            frecuencias[contador] = frecuenciasCodificadas(img);
-            contador++;
-        }
-
-        try(FileOutputStream fos = new FileOutputStream(path)) {
-            fos.write(intToBytes(imagenes.size()));
-            for (int i = 0; i < imagenes.size(); i++) {
-                fos.write(intToBytes(imagenes.get(i).getWidth()));
-                fos.write(intToBytes(imagenes.get(i).getHeight()));
-                fos.write(frecuencias[i]);
-                fos.write(imagenCodificada[i]);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    public static List<Boolean> codificarConHuffman(Imagen img){
-        List<Boolean> salida = new ArrayList<>(img.getWidth() * img.getHeight()*2);
+        //Obtener el mapa de codificaciones de símbolos correspondiente a las frecuencias de la imagen
         Map<Integer, boolean[]> codificaciones = codificacionHuffman(getFrecuencias(img)).codificaciones;
 
+        //Codificar cada símbolo con su codificación correspondiente
         for (int y = 0; y < img.getHeight(); y++) {
             for (int x = 0; x < img.getWidth(); x++) {
                 int color = img.getColor(x, y);
                 boolean[] codificacion = codificaciones.get(color);
                 for (boolean b: codificacion){
-                    salida.add(b);
+                    buffer.agregarBoolean(b);
                 }
             }
         }
 
-        return salida;
+        buffer.finalizarEscritura();
+
+        return buffer.getBytes();
+    }
+
+
+    private static void decodificarConRLC(Imagen img, int xInicial, int yInicial, int width, int height, BufferReaderArrayBytes buffer){
+        int[] pixeles = new int[width * height];
+        int pos = 0;
+        while (pos < pixeles.length){ //Mientras falten pixeles por cargar
+            boolean hayPar = buffer.leerBoolean();
+            if (hayPar){
+                //Si está codificado como par <Símbolo, Cantidad>, leer los dos bytes del par
+                int color = buffer.leerByte() & 255;
+                int cantidad = buffer.leerByte() & 255;
+                for (int i = 0; i < cantidad; i++){
+                    //Añadir tantos píxeles consecutivos del mismo color como indique la cantidad
+                    pixeles[pos] = color;
+                    pos++;
+                }
+            }else{
+                //Si no se codificó como par, simplemente tomar el próximo byte con el color y cargarlo al pixel
+                pixeles[pos] = buffer.leerByte() & 255;
+                pos++;
+            }
+        }
+
+        pos = 0;
+        //Pintar la imagen con los pixeles decodificados
+        for (int y = 0; y < height; y++){
+            for (int x = 0; x < width; x++){
+                img.setColor(x + xInicial, y + yInicial, pixeles[pos]);
+                pos++;
+            }
+        }
     }
 
 
@@ -191,51 +273,43 @@ public class Codificaciones {
                     contador++; //Contar cuántas apariciones consecutivas del color hay
                 } else {
                     //Si vino un color nuevo, codificar la "corrida" del anterior y resetear contadores
-                    if (colorAnterior > -1) {
-                        if (contador == 1) {
-                            buffer.agregarBoolean(false); //Indicar que no se codifica con un número de longitud
-                            buffer.agregarByte((byte) colorAnterior);
-                        } else {
-                            buffer.agregarBoolean(true); //Indicar que se codifica con un número de longitud
-                            buffer.agregarByte((byte) colorAnterior);
-                            buffer.agregarByte((byte) contador);
-                        }
-                    }
+                    if (colorAnterior > -1)
+                        agregarNuevaCorrida(buffer, colorAnterior, contador);
                     contador = 1;
                     colorAnterior = color;
                 }
             }
         }
 
-        //La codificación para el último color (sí, hay DUP de código)
-        if (colorAnterior > -1) {
-            if (contador == 1) {
-                buffer.agregarBoolean(false); //Indicar que no se codifica con un número de longitud
-                buffer.agregarByte((byte) colorAnterior);
-            } else {
-                buffer.agregarBoolean(true); //Indicar que se codifica con un número de longitud
-                buffer.agregarByte((byte) colorAnterior);
-                buffer.agregarByte((byte) contador);
-            }
-        }
+        //La codificación para el último color
+        agregarNuevaCorrida(buffer, colorAnterior, contador);
 
         buffer.finalizarEscritura();
 
         return buffer.getBytes();
     }
 
-
+    private static void agregarNuevaCorrida(BufferWriterArrayBytes buffer, int colorAnterior, int contador) {
+        if (contador == 1) {
+            buffer.agregarBoolean(false); //Indicar que no se codifica con un número de longitud
+            buffer.agregarByte((byte) colorAnterior);
+        } else {
+            buffer.agregarBoolean(true); //Indicar que se codifica con un número de longitud
+            buffer.agregarByte((byte) colorAnterior);
+            buffer.agregarByte((byte) contador);
+        }
+    }
 
 
     private static class NodoHuffman implements Comparable{
-        Double frecuencia; Integer simbolo; NodoHuffman h1; NodoHuffman h2;
+        Integer frecuencia; Integer simbolo; NodoHuffman h1; NodoHuffman h2;
 
-        public NodoHuffman(double frecuencia, Integer simbolo){
+        public NodoHuffman(int frecuencia, Integer simbolo){
             this.frecuencia = frecuencia; this.simbolo = simbolo;
             this.h1 = null; this.h2 = null;
         }
 
-        public NodoHuffman(double frecuencia, NodoHuffman h1, NodoHuffman h2){
+        public NodoHuffman(int frecuencia, NodoHuffman h1, NodoHuffman h2){
             this.frecuencia = frecuencia; this.simbolo = null;
             this.h1 = h1; this.h2 = h2;
         }
@@ -249,6 +323,7 @@ public class Codificaciones {
 
     private static void armarCodificacion(Map<Integer, boolean[]> codificaciones, NodoHuffman nodo, List<Boolean> codificacion){
         if (nodo.simbolo != null){
+            //Si el nodo es una hoja, agregar su codificación al mapa de codificaciones
             boolean[] cod = new boolean[codificacion.size()];
             int i = 0;
             for (Boolean b: codificacion){
@@ -257,9 +332,12 @@ public class Codificaciones {
             }
             codificaciones.put(nodo.simbolo, cod);
         }else{
+            //Si el nodo es un "nodo padre", visitar a los hijos
+
             codificacion.add(false);
             armarCodificacion(codificaciones, nodo.h1, codificacion);
             codificacion.remove(codificacion.size() - 1);
+
             codificacion.add(true);
             armarCodificacion(codificaciones, nodo.h2, codificacion);
             codificacion.remove(codificacion.size() - 1);
@@ -271,13 +349,13 @@ public class Codificaciones {
         NodoHuffman raiz;
     }
 
-    public static ResultadoCodificacion codificacionHuffman(double frecuencias[]){
+    public static ResultadoCodificacion codificacionHuffman(int frecuencias[]){
         Map<Integer, boolean[]> codificacion = new HashMap<>();
         PriorityQueue<NodoHuffman> colaDeNodosPadres = new PriorityQueue<>();
 
         //Agregar símbolos existentes con sus frecuencias
         for (int i = 0; i < frecuencias.length; i++){
-            if (frecuencias[i] > 0d){
+            if (frecuencias[i] > 0){
                 colaDeNodosPadres.add(new NodoHuffman(frecuencias[i], i));
             }
         }

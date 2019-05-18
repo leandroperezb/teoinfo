@@ -23,7 +23,7 @@ public class BufferReaderArrayBytes {
 
             arrayPos++;
 
-            resultado = (byte) (resultado | ( (entrada[arrayPos] << (32 - bytePos)) >> (32 - bytePos) )); //Obtener la última parte
+            resultado = (byte) (resultado | ((entrada[arrayPos] & 255) >> (8 - bytePos)) ); //Obtener la última parte
         }else{ //Si el byte está guardado en forma entera
             resultado = entrada[arrayPos];
             arrayPos++;

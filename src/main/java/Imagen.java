@@ -87,6 +87,10 @@ public class Imagen extends JPanel{
         return (new Color(imagen.getRGB(x, y), true)).getRed();
     }
 
+    public void setColor(int x, int y, int color){
+        imagen.setRGB(x, y, (new Color(color, color, color).getRGB()));
+    }
+
     public List<Imagen> obtenerCuadrantes(){
         List<Imagen> lista = new ArrayList<>();
 
