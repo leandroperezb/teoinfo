@@ -219,6 +219,7 @@ public class Screen extends JPanel implements Runnable{
 			botones.get(i).paintComponent(g);
 		}
 
+		g.setColor(Color.black);
 		g.drawString("(Haga click en un bloque para obtener sus datos)" , 20, this.getHeight() - 20);
 
 		if(imagenAnalizada != -1)

@@ -1,4 +1,3 @@
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -12,53 +11,61 @@ public class Codificaciones {
 
     public static Imagen levantarArchivo(String path){
         Imagen imagenDecodificada = null;
+        byte[] bytes;
         try {
-            BufferReaderArrayBytes buffer = new BufferReaderArrayBytes( Files.readAllBytes(new File(path).toPath()), 0 );
-            //Leer la cantidad de bloques
-            int cantidadBloques = buffer.leerInt();
+            bytes = Files.readAllBytes(new File(path).toPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return imagenDecodificada;
+        }
 
-            //Leer dimensiones de la imagen
-            int widthImagen = buffer.leerInt();
-            int heightImagen = buffer.leerInt();
+        BufferReaderArrayBytes buffer = new BufferReaderArrayBytes(bytes, 0);
 
-            //Crear una nueva imagen de esas dimensiones
-            BufferedImage img = new BufferedImage(widthImagen, heightImagen, BufferedImage.TYPE_BYTE_GRAY);
-            imagenDecodificada = new Imagen(img);
+        //Leer dimensiones de la imagen
+        int widthImagen = buffer.leerInt();
+        int heightImagen = buffer.leerInt();
 
-            //Leer las codificaciones utilizadas en cada bloque
-            boolean[] codificadoConHuffman = new boolean[cantidadBloques];
-            for (int i = 0; i < cantidadBloques; i++){
-                codificadoConHuffman[i] = buffer.leerBoolean();
+        //Las dimensiones de cada bloque (salvo quizás algún borde)
+        int sizeBloque = buffer.leerInt();
+
+        int cantidadBloques = (int) Math.ceil((double) widthImagen / sizeBloque) * (int) Math.ceil((double) heightImagen / sizeBloque);
+
+        //Crear una nueva imagen de esas dimensiones
+        BufferedImage img = new BufferedImage(widthImagen, heightImagen, BufferedImage.TYPE_BYTE_GRAY);
+        imagenDecodificada = new Imagen(img);
+
+        //Leer las codificaciones utilizadas en cada bloque
+        boolean[] codificadoConHuffman = new boolean[cantidadBloques];
+        for (int i = 0; i < cantidadBloques; i++){
+            codificadoConHuffman[i] = buffer.leerBoolean();
+        }
+        buffer.finalizarLecturaDeByte();
+
+        int x = 0; int y = 0; //Coordenadas para saber en qué lugar de la imagen se está escribiendo cada bloque
+
+        //Por cada bloque de imagen
+        for (int i = 0; i < cantidadBloques; i++){
+            //Obtener dimensiones del bloque actual
+            int width = Math.min(sizeBloque, widthImagen - x);
+            int height = Math.min(sizeBloque, heightImagen - y);
+
+            //Decodificar con el método que corresponda
+            if (codificadoConHuffman[i]) {
+                NodoHuffman raizArbol = codificacionHuffman(decodificarFrecuencias(buffer)).raiz;
+                decodificarConHuffman(imagenDecodificada, x, y, width, height, raizArbol, buffer);
+            }else{
+                decodificarConRLC(imagenDecodificada, x, y, width, height, buffer);
             }
             buffer.finalizarLecturaDeByte();
 
-            int x = 0; int y = 0; //Coordenadas para saber en qué lugar de la imagen se está escribiendo cada bloque
-
-            //Por cada bloque de imagen
-            for (int i = 0; i < cantidadBloques; i++){
-                //Leer sus dimensiones (ancho y alto)
-                int width = buffer.leerInt();
-                int height = buffer.leerInt();
-
-                //Decodificar con el método que corresponda
-                if (codificadoConHuffman[i]) {
-                    NodoHuffman raizArbol = codificacionHuffman(decodificarFrecuencias(buffer)).raiz;
-                    decodificarConHuffman(imagenDecodificada, x, y, width, height, raizArbol, buffer);
-                }else{
-                    decodificarConRLC(imagenDecodificada, x, y, width, height, buffer);
-                }
-                buffer.finalizarLecturaDeByte();
-
-                //Escribir el próximo bloque al lado del actual
-                x += width;
-                //Si la coordenada x supera al ancho de la imagen entera, escribir el próximo bloque en la siguiente fila
-                if (x >= widthImagen){
-                    x = 0; y+= height;
-                }
+            //Escribir el próximo bloque al lado del actual
+            x += width;
+            //Si la coordenada x supera al ancho de la imagen entera, escribir el próximo bloque en la siguiente fila
+            if (x >= widthImagen){
+                x = 0; y+= height;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+
 
         return imagenDecodificada;
     }
@@ -89,11 +96,12 @@ public class Codificaciones {
 
 
         try(FileOutputStream fos = new FileOutputStream(path)) {
-            //Escribir cantidad de bloques
-            fos.write(intToBytes(imagenes.size()));
             //Escribir las dimensiones de la imagen
             fos.write(intToBytes(imagen.getWidth()));
             fos.write(intToBytes(imagen.getHeight()));
+
+            //Escribir las dimensiones de cada bloque
+            fos.write(intToBytes(Imagen.TAMANIOBLOQUECUADRANTE));
 
             /*Escribir las codificaciones utilizadas para cada bloque (una serie de bits en los que cada uno indica la
               codificación utilizada para el bloque correspondiente a su posición)*/
@@ -101,10 +109,6 @@ public class Codificaciones {
 
             //Por cada bloque de la imagen
             for (int i = 0; i < imagenes.size(); i++) {
-                //Escribir sus dimensiones (ancho y alto)
-                fos.write(intToBytes(imagenes.get(i).getWidth()));
-                fos.write(intToBytes(imagenes.get(i).getHeight()));
-
                 //Si se codificó con Huffman, guardar la lista de las frecuencias de apariciones de los símbolos
                 if (imagenes.get(i).entropiaConMemoria() > UMBRAL) {
                     fos.write(frecuencias[i]);
