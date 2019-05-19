@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.List;
 
 public class Codificaciones {
-    static double UMBRAL = 4d;
+    static double UMBRAL = 8d;
 
     public static Imagen levantarArchivo(String path){
         Imagen imagenDecodificada = null;
@@ -264,7 +264,7 @@ public class Codificaciones {
         }
     }
 
-
+static int granContador[] = {0,0,0,0,0,0};
     public static byte[] codificarConRLC(Imagen img) {
         BufferWriterArrayBytes buffer = new BufferWriterArrayBytes(new ArrayList<>(img.getWidth() * img.getHeight() * 2));
 
@@ -289,7 +289,9 @@ public class Codificaciones {
         agregarNuevaCorrida(buffer, colorAnterior, contador);
 
         buffer.finalizarEscritura();
-
+for(int i = 0; i < granContador.length; i++){
+    granContador[i] = 0;
+}
         return buffer.getBytes();
     }
 
@@ -297,9 +299,13 @@ public class Codificaciones {
         if (contador == 1) {
             buffer.agregarBoolean(false); //Indicar que no se codifica con un número de longitud
             buffer.agregarByte((byte) colorAnterior);
+            granContador[0]++;
         } else {
             buffer.agregarBoolean(true); //Indicar que se codifica con un número de longitud
             buffer.agregarByte((byte) colorAnterior);
+            if (contador <= 6) {
+                granContador[contador - 1]++;
+            }
             buffer.agregarByte((byte) contador);
         }
     }
