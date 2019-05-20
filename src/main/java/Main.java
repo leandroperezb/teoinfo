@@ -6,6 +6,7 @@ import org.jfree.data.xy.DefaultIntervalXYDataset;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.*;
 import java.io.File;
@@ -51,6 +52,10 @@ public class Main {
     static void abrirArchivo(JFrame frame) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+        if (botonCod.isSelected()) {
+            fileChooser.setAcceptAllFileFilterUsed(false);
+            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Imagen codificada (.cod)", "cod"));
+        }
         int result = fileChooser.showOpenDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
@@ -105,17 +110,31 @@ public class Main {
     
     private static JFileChooser getFileChooser(String dialogTitle, int mode) {
         JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
         fileChooser.setDialogTitle(dialogTitle);
         fileChooser.setApproveButtonText("Seleccionar");
         fileChooser.setFileSelectionMode( mode);
-        fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
         return fileChooser;
     }
     
     public static void guardarCod() {
-        JFileChooser fileChooser = getFileChooser("Seleccione una carpeta donde guardar la codificación", JFileChooser.DIRECTORIES_ONLY );
-        if (fileChooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION)
-        	 Codificaciones.guardarEnArchivo(fileChooser.getSelectedFile().getAbsolutePath(), Screen.getImagen());
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+        fileChooser.setDialogTitle("Guardar imagen codificada");
+        fileChooser.setAcceptAllFileFilterUsed(false);
+        fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Imagen codificada (.cod)", "cod"));
+        fileChooser.setApproveButtonText("Guardar");
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+        if (fileChooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
+            String ruta = fileChooser.getSelectedFile().getAbsolutePath();
+            if (ruta.length() > 4 && !ruta.substring(ruta.length() - 4).equalsIgnoreCase(".cod")){
+                ruta = ruta + ".cod";
+            }
+            Codificaciones.guardarEnArchivo(ruta, Screen.getImagen());
+
+            JOptionPane.showMessageDialog(null, "Imagen codificada correctamente", "", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
     
     public static void abrirCod() {
@@ -161,21 +180,18 @@ public class Main {
         panelLateral.setLayout(new GridBagLayout());
         
         JPanel panelHt = new JPanel(); panelHt.setLayout(new GridBagLayout());
-		    JLabel label = new JLabel("Valor de Ht:");
+		    actualHt = new JLabel("Valor de Ht:  (Valor actual: " + Codificaciones.UMBRAL + ")");
 		    ht = new NumericTextField(15, format);
-		    ht.setValue(Codificaciones.UMBRAL);
-		
-		    constraints.gridy = 0; constraints.gridx = 0;
-		    panelHt.add(label, constraints);
-		
-		    JPanel panelActualHt = new JPanel();
-		    actualHt = new JLabel("(Valor actual: "+ ")");
-		    
-		    constraints.gridy = 1;
-		    panelHt.add(ht, constraints);
-    		
-		    constraints.gridy = 0;
-	        panelLateral.add(panelHt, constraints);
+            ht.setValue(Codificaciones.UMBRAL);
+
+            constraints.gridy = 0; constraints.gridx = 0;
+            panelHt.add(actualHt, constraints);
+
+            constraints.gridy = 1;
+            panelHt.add(ht, constraints);
+
+        constraints.gridy = 0;
+	    panelLateral.add(panelHt, constraints);
 	        
 	    JPanel panelBotonHt = new JPanel(); panelBotonHt.setLayout(new GridBagLayout());
             setearHt = new JButton("Establecer nuevo Ht");
@@ -190,6 +206,7 @@ public class Main {
                         Codificaciones.UMBRAL = 4d;
                     }finally {
                         ht.setValue(Codificaciones.UMBRAL);
+                        actualHt.setText("Valor de Ht:  (Valor actual: " + Codificaciones.UMBRAL + ")");
                     }
 
                     panelLateral.repaint();
@@ -200,7 +217,7 @@ public class Main {
 
 
         JPanel panelEsperanza = new JPanel(); panelEsperanza.setLayout(new GridBagLayout());
-            label = new JLabel("Épsilon para la media:");
+            JLabel label = new JLabel("Épsilon para la media:");
             epsilonEsperanza = new NumericTextField(15, format);
             epsilonEsperanza.setValue(FuenteMarkoviana.epsilonEsperanza);
 
@@ -279,18 +296,9 @@ public class Main {
         panelLateral.add(panelBoton, constraints);
 
         //Panel vacío para "espaciar"
-        constraints.gridy = 5; constraints.weighty = 0.3333333333d;
+        constraints.gridy = 5; constraints.weighty = 0.2d;
         panelLateral.add(new JPanel(), constraints);
-        
-        //boton de codificar imagen
-        JPanel panelCodImagen = new JPanel(); panelCodImagen.setLayout(new GridBagLayout());
-			StCod.addActionListener( (evt) -> guardarCod());
-			constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
-			panelCodImagen.add(StCod, constraints);
-		
-		constraints.gridy = 6; constraints.weighty = 0.3333333333d; constraints.weightx = 0d;
-		panelLateral.add(panelCodImagen, constraints);
-        
+
         
 		//boton de guardar datos
         JPanel panelGuardarDatos = new JPanel(); panelGuardarDatos.setLayout(new GridBagLayout());
@@ -304,28 +312,40 @@ public class Main {
             constraints.gridy = 1; constraints.weightx = 1d;
             panelGuardarDatos.add(panelGuardandoDatos, constraints);
 
-		constraints.gridy = 7; constraints.weighty = 0.3333333333d; constraints.weightx = 0d;
+		constraints.gridy = 6; constraints.weighty = 0.2d; constraints.weightx = 0d;
 		panelLateral.add(panelGuardarDatos, constraints);
+
+
+        //boton de cargar imagen
+        JPanel panelCargaImagen = new JPanel(); panelCargaImagen.setLayout(new GridBagLayout());
+            addImagen = new JButton("<html><h1>Abrir imagen</h1></html>");
+            addImagen.addActionListener( (evt) -> abrirArchivo(frame) );
+            constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+            panelCargaImagen.add(addImagen, constraints);
+
+        constraints.gridy = 7; constraints.weighty = 0.2d; constraints.weightx = 0d;
+        panelLateral.add(panelCargaImagen, constraints);
+
         
        //boton de abrir codificación
         JPanel panelCargaCod = new JPanel(); panelCargaCod.setLayout(new GridBagLayout());
 			botonCod = new JButton("<html><h1>Abrir codificación</h1></html>");
 			botonCod.addActionListener( (evt) -> abrirCod() );
-			constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+            constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
 			panelCargaCod.add(botonCod, constraints);
 		
-		constraints.gridy = 8; constraints.weighty = 0.3333333333d; constraints.weightx = 0d;
+		constraints.gridy = 8; constraints.weighty = 0.2d; constraints.weightx = 0d;
 		panelLateral.add(panelCargaCod, constraints);
-		
-       //boton de cargar imagen
-        JPanel panelCargaImagen = new JPanel(); panelCargaImagen.setLayout(new GridBagLayout());
-			addImagen = new JButton("<html><h1>Abrir imagen</h1></html>");
-			addImagen.addActionListener( (evt) -> abrirArchivo(frame) );
-			constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
-			panelCargaImagen.add(addImagen, constraints);
-		
-		constraints.gridy = 9; constraints.weighty = 0.3333333333d; constraints.weightx = 0d;
-		panelLateral.add(panelCargaImagen, constraints);
+
+
+        //boton de codificar imagen
+        JPanel panelCodImagen = new JPanel(); panelCodImagen.setLayout(new GridBagLayout());
+        StCod.addActionListener( (evt) -> guardarCod());
+        constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+        panelCodImagen.add(StCod, constraints);
+
+        constraints.gridy = 9; constraints.weighty = 0.2d; constraints.weightx = 0d;
+        panelLateral.add(panelCodImagen, constraints);
 
     }
 
