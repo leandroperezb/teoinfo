@@ -349,6 +349,31 @@ public class Main {
 
     }
 
+    public static void calcularRuido(){
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Seleccione la imagen de entrada al canal (la original)");
+        fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+        int result = fileChooser.showOpenDialog(frame);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+
+            try {
+                Imagen imagenEntrada = new Imagen(ImageIO.read(selectedFile));
+                JFileChooser fileChooser2 = new JFileChooser();
+                fileChooser2.setDialogTitle("Seleccione la imagen de salida del canal");
+                fileChooser2.setCurrentDirectory(new File(System.getProperty("user.dir")));
+
+                if (fileChooser2.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION){
+                    Imagen imagenSalida = new Imagen(ImageIO.read(fileChooser2.getSelectedFile()));
+
+                    JOptionPane.showMessageDialog(null, "Ruido del canal: " + Canales.ruidoCanal(imagenEntrada, imagenSalida), "", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public static void main(String[] args){
         frame = new JFrame("Teoría de la información");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -366,17 +391,31 @@ public class Main {
         botonCod = new JButton("<html><h1>Abrir codificación</h1></html>");
         botonCod.setPreferredSize(new Dimension(300, 80));
         botonCod.addActionListener( (evt) -> abrirCod());
+
         
         frame.getContentPane().setLayout(new GridBagLayout());
-        constraints.gridy = 0;constraints.gridx = 0;        
+        constraints.gridy = 0; constraints.gridx = 0;
         frame.getContentPane().add(boton,constraints);
         
         //Panel vacío para "espaciar"
         constraints.gridy = 1; constraints.ipady = 50;
         frame.getContentPane().add(new JPanel(), constraints);
         
-        constraints.gridy = 2;constraints.ipady = 0;
+        constraints.gridy = 2; constraints.ipady = 0;
         frame.getContentPane().add(botonCod, constraints);
+
+        boton = new JButton("<html><center><h1>Calcular ruido<br>de un canal</h1></center></html>");
+        boton.setPreferredSize(new Dimension(300, 80));
+        boton.addActionListener( (evt) -> calcularRuido() );
+
+        //Panel vacío para "espaciar"
+        constraints.gridy = 3; constraints.ipady = 50;
+        frame.getContentPane().add(new JPanel(), constraints);
+
+
+        constraints.gridy = 4; constraints.ipady = 0;
+        frame.getContentPane().add(boton,constraints);
+
         
         frame.setVisible(true);
     }

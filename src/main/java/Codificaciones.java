@@ -354,8 +354,8 @@ public class Codificaciones {
     }
 
     public static ResultadoCodificacion codificacionHuffman(int frecuencias[]){
-        Map<Integer, boolean[]> codificacion = new HashMap<>();
-        PriorityQueue<NodoHuffman> colaDeNodosPadres = new PriorityQueue<>();
+        Map<Integer, boolean[]> codificacion = new HashMap<>(256);
+        PriorityQueue<NodoHuffman> colaDeNodosPadres = new PriorityQueue<>(256);
 
         //Agregar símbolos existentes con sus frecuencias
         for (int i = 0; i < frecuencias.length; i++){
