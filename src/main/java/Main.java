@@ -6,6 +6,7 @@ import org.jfree.data.xy.DefaultIntervalXYDataset;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.*;
 import java.io.File;
@@ -23,12 +24,18 @@ public class Main {
 
     static NumericTextField epsilonEsperanza = null;
     static NumericTextField epsilonDesvio = null;
+    static NumericTextField ht = null;
     static JLabel actualEsperanza;
     static JLabel actualDesvio;
+    static JLabel actualHt;
 
     static JButton setearEpsilons = null;
+    static JButton setearHt = null;
     static JButton addImagen = null;
     static JButton guardarInfo = null;
+    
+    static JButton botonCod = null;
+    static JButton StCod = new JButton("<html><h2>Guardar imagen codificada</h2></html>");
 
     static JFreeChart generarHistograma(JFrame frame, DefaultIntervalXYDataset dataset, int i, boolean mostrar) {
         JFreeChart histograma = ChartFactory.createHistogram("Histograma del bloque N°"+i, "Intensidades",
@@ -45,41 +52,20 @@ public class Main {
     static void abrirArchivo(JFrame frame) {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+        if (botonCod.isSelected()) {
+            fileChooser.setAcceptAllFileFilterUsed(false);
+            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Imagen codificada (.cod)", "cod"));
+        }
         int result = fileChooser.showOpenDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
-            try {
-                Imagen imagen = new Imagen(ImageIO.read(selectedFile));
-
-                {
-                	//si ya esta creado el screen cambio la imagen y recalculo
-                	if(Screen.sc != null) {
-                		Screen.sc.reset(imagen);
-                	}
-                	else {
-                	    frame.getContentPane().removeAll(); //Quitar botón de abrir imagen
-
-                		Screen.sc = new Screen(imagen, frame);
-
-                		GridBagConstraints constraints = new GridBagConstraints();
-                		frame.getContentPane().setLayout(new GridBagLayout());
-
-                		JPanel panelLateral = new JPanel();
-                        crearPanelLateral(panelLateral);
-
-
-                        constraints.weightx = 0d; constraints.fill = GridBagConstraints.BOTH;
-                        constraints.weighty = 1d; constraints.gridx=1; constraints.gridy=0;
-                		frame.getContentPane().add(panelLateral, constraints);
-
-                        constraints.weightx = 1d; constraints.gridx=0;
-                		frame.getContentPane().add(Screen.sc, constraints);
-                	}
-                    frame.repaint();
-                    frame.setVisible(true);
-                }
-
-
+            
+        	Imagen imagen = null;
+           	if (botonCod.isSelected()) {
+        		imagen =Codificaciones.levantarArchivo(selectedFile.toString());
+        	}
+           	else { try {
+            	imagen = new Imagen(ImageIO.read(selectedFile));
             } catch(IOException e){
                 JOptionPane.showMessageDialog(null,
                         "Se ha producido un error. No es posible leer el archivo",
@@ -91,20 +77,77 @@ public class Main {
                         "El archivo ingresado no es una imagen válida",
                         "Archivo inválido",
                         JOptionPane.WARNING_MESSAGE);
-            }
+            }}
 
+        	//si ya esta creado el screen cambio la imagen y recalculo
+        	if(Screen.sc != null) {
+        		Screen.sc.reset(imagen);
+        	}
+        	else {
+        	    frame.getContentPane().removeAll(); //Quitar botones de primer menú
+
+        		Screen.sc = new Screen(imagen, frame);
+
+        		GridBagConstraints constraints = new GridBagConstraints();
+        		frame.getContentPane().setLayout(new GridBagLayout());
+
+        		JPanel panelLateral = new JPanel();
+                crearPanelLateral(panelLateral);
+
+
+                constraints.weightx = 0d; constraints.fill = GridBagConstraints.BOTH;
+                constraints.weighty = 1d; constraints.gridx=1; constraints.gridy=0;
+        		frame.getContentPane().add(panelLateral, constraints);
+
+                constraints.weightx = 1d; constraints.gridx=0;
+        		frame.getContentPane().add(Screen.sc, constraints);
+        	}
+            frame.repaint();
+            frame.setVisible(true);
         }
+		botonCod.setSelected(false);
+    }
+    
+    private static JFileChooser getFileChooser(String dialogTitle, int mode) {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+        fileChooser.setDialogTitle(dialogTitle);
+        fileChooser.setApproveButtonText("Seleccionar");
+        fileChooser.setFileSelectionMode( mode);
+        return fileChooser;
+    }
+    
+    public static void guardarCod() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+        fileChooser.setDialogTitle("Guardar imagen codificada");
+        fileChooser.setAcceptAllFileFilterUsed(false);
+        fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("Imagen codificada (.cod)", "cod"));
+        fileChooser.setApproveButtonText("Guardar");
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+        if (fileChooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
+            String ruta = fileChooser.getSelectedFile().getAbsolutePath();
+            if (ruta.length() > 4 && !ruta.substring(ruta.length() - 4).equalsIgnoreCase(".cod")){
+                ruta = ruta + ".cod";
+            }
+            Codificaciones.guardarEnArchivo(ruta, Screen.getImagen());
+
+            JOptionPane.showMessageDialog(null, "Imagen codificada correctamente", "", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+    
+    public static void abrirCod() {
+        botonCod.setSelected(true);
+        abrirArchivo(frame);
     }
 
     private static void generarArchivos(JFrame frame, JLabel texto){
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Seleccione una carpeta donde guardar los archivos");
-        fileChooser.setApproveButtonText("Seleccionar");
-        fileChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
-        fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+        JFileChooser fileChooser = getFileChooser("Seleccione una carpeta donde guardar los archivos", JFileChooser.DIRECTORIES_ONLY );
         int result = fileChooser.showOpenDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
             new Thread( () -> {
+
                 texto.setVisible(true);
                 setearEpsilons.setEnabled(false); addImagen.setEnabled(false); guardarInfo.setEnabled(false);
                 String directorio = fileChooser.getSelectedFile().getAbsolutePath();
@@ -116,6 +159,7 @@ public class Main {
 
                 texto.setVisible(false);
                 setearEpsilons.setEnabled(true); addImagen.setEnabled(true); guardarInfo.setEnabled(true);
+
                 JOptionPane.showMessageDialog(null, "Archivos guardados correctamente", "", JOptionPane.INFORMATION_MESSAGE);
             }).start();
         }
@@ -134,6 +178,42 @@ public class Main {
         constraints.fill = GridBagConstraints.BOTH; constraints.weighty = 0d; constraints.weightx = 0;
 
         panelLateral.setLayout(new GridBagLayout());
+        
+        JPanel panelHt = new JPanel(); panelHt.setLayout(new GridBagLayout());
+		    actualHt = new JLabel("Valor de Ht:  (Valor actual: " + Codificaciones.UMBRAL + ")");
+		    ht = new NumericTextField(15, format);
+            ht.setValue(Codificaciones.UMBRAL);
+
+            constraints.gridy = 0; constraints.gridx = 0;
+            panelHt.add(actualHt, constraints);
+
+            constraints.gridy = 1;
+            panelHt.add(ht, constraints);
+
+        constraints.gridy = 0;
+	    panelLateral.add(panelHt, constraints);
+	        
+	    JPanel panelBotonHt = new JPanel(); panelBotonHt.setLayout(new GridBagLayout());
+            setearHt = new JButton("Establecer nuevo Ht");
+            constraints.gridy = 0;
+            panelBotonHt.add(setearHt, constraints);
+
+            //Al clickear el botón, actualizar el valor de ht
+            setearHt.addActionListener( (evt) -> {
+                    try{
+                        Codificaciones.UMBRAL = Math.abs(ht.getDoubleValue());
+                    }catch (ParseException e) {
+                        Codificaciones.UMBRAL = 4d;
+                    }finally {
+                        ht.setValue(Codificaciones.UMBRAL);
+                        actualHt.setText("Valor de Ht:  (Valor actual: " + Codificaciones.UMBRAL + ")");
+                    }
+
+                    panelLateral.repaint();
+                }
+            );
+        constraints.gridy = 1;
+        panelLateral.add(panelBotonHt, constraints);
 
 
         JPanel panelEsperanza = new JPanel(); panelEsperanza.setLayout(new GridBagLayout());
@@ -141,7 +221,7 @@ public class Main {
             epsilonEsperanza = new NumericTextField(15, format);
             epsilonEsperanza.setValue(FuenteMarkoviana.epsilonEsperanza);
 
-            constraints.gridy = 0; constraints.gridx = 0;
+            constraints.gridy = 0;
             panelEsperanza.add(label, constraints);
 
             JPanel panelActualEsperanza = new JPanel();
@@ -172,9 +252,9 @@ public class Main {
             panelDesvio.add(panelActualDesvio, constraints);
 
 
-        constraints.gridy = 0; constraints.gridx = 0; constraints.ipady = 80;
+        constraints.gridy = 2; constraints.gridx = 0; constraints.ipady = 20;
         panelLateral.add(panelEsperanza, constraints);
-        constraints.gridy = 1;
+        constraints.gridy = 3;
         panelLateral.add(panelDesvio, constraints);
 
         JPanel panelBoton = new JPanel(); panelBoton.setLayout(new GridBagLayout());
@@ -212,12 +292,13 @@ public class Main {
                     Screen.sc.onNuevosEpsilons();
                 }
             );
-        constraints.gridy = 2;
+        constraints.gridy = 4;
         panelLateral.add(panelBoton, constraints);
 
         //Panel vacío para "espaciar"
-        constraints.gridy = 3; constraints.weighty = 0.3333333333d;
+        constraints.gridy = 5; constraints.weighty = 0.2d;
         panelLateral.add(new JPanel(), constraints);
+
         
 		//boton de guardar datos
         JPanel panelGuardarDatos = new JPanel(); panelGuardarDatos.setLayout(new GridBagLayout());
@@ -231,18 +312,66 @@ public class Main {
             constraints.gridy = 1; constraints.weightx = 1d;
             panelGuardarDatos.add(panelGuardandoDatos, constraints);
 
-		constraints.gridy = 4; constraints.weighty = 0.3333333333d; constraints.weightx = 0d;
+		constraints.gridy = 6; constraints.weighty = 0.2d; constraints.weightx = 0d;
 		panelLateral.add(panelGuardarDatos, constraints);
-        
-       //boton de cargar imagen
-        JPanel panelCargaImagen = new JPanel(); panelCargaImagen.setLayout(new GridBagLayout());
-		addImagen = new JButton("<html><h1>Abrir imagen</h1></html>");
-		addImagen.addActionListener( (evt) -> abrirArchivo(frame) );
-		constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
-		panelCargaImagen.add(addImagen, constraints);
-		constraints.gridy = 5; constraints.weighty = 0.3333333333d; constraints.weightx = 0d;
-		panelLateral.add(panelCargaImagen, constraints);
 
+
+        //boton de cargar imagen
+        JPanel panelCargaImagen = new JPanel(); panelCargaImagen.setLayout(new GridBagLayout());
+            addImagen = new JButton("<html><h1>Abrir imagen</h1></html>");
+            addImagen.addActionListener( (evt) -> abrirArchivo(frame) );
+            constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+            panelCargaImagen.add(addImagen, constraints);
+
+        constraints.gridy = 7; constraints.weighty = 0.2d; constraints.weightx = 0d;
+        panelLateral.add(panelCargaImagen, constraints);
+
+        
+       //boton de abrir codificación
+        JPanel panelCargaCod = new JPanel(); panelCargaCod.setLayout(new GridBagLayout());
+			botonCod = new JButton("<html><h2>Abrir imagen codificada</h2></html>");
+			botonCod.addActionListener( (evt) -> abrirCod() );
+            constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+			panelCargaCod.add(botonCod, constraints);
+		
+		constraints.gridy = 8; constraints.weighty = 0.2d; constraints.weightx = 0d;
+		panelLateral.add(panelCargaCod, constraints);
+
+
+        //boton de codificar imagen
+        JPanel panelCodImagen = new JPanel(); panelCodImagen.setLayout(new GridBagLayout());
+        StCod.addActionListener( (evt) -> guardarCod());
+        constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+        panelCodImagen.add(StCod, constraints);
+
+        constraints.gridy = 9; constraints.weighty = 0.2d; constraints.weightx = 0d;
+        panelLateral.add(panelCodImagen, constraints);
+
+    }
+
+    public static void calcularRuido(){
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Seleccione la imagen de entrada al canal (la original)");
+        fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+        int result = fileChooser.showOpenDialog(frame);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+
+            try {
+                Imagen imagenEntrada = new Imagen(ImageIO.read(selectedFile));
+                JFileChooser fileChooser2 = new JFileChooser();
+                fileChooser2.setDialogTitle("Seleccione la imagen de salida del canal");
+                fileChooser2.setCurrentDirectory(new File(System.getProperty("user.dir")));
+
+                if (fileChooser2.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION){
+                    Imagen imagenSalida = new Imagen(ImageIO.read(fileChooser2.getSelectedFile()));
+
+                    JOptionPane.showMessageDialog(null, "Ruido del canal: " + Canales.ruidoCanal(imagenEntrada, imagenSalida), "", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public static void main(String[] args){
@@ -251,14 +380,43 @@ public class Main {
         frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
         frame.setMinimumSize(new Dimension(930, 600));
         frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
-
+        
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.BOTH; constraints.weighty = 0d; constraints.weightx = 0d;
+        
         JButton boton = new JButton("<html><h1>Abrir imagen</h1></html>");
         boton.setPreferredSize(new Dimension(300, 80));
         boton.addActionListener( (evt) -> abrirArchivo(frame) );
+        
+        botonCod = new JButton("<html><center><h1>Abrir imagen codificada</h1></center></html>");
+        botonCod.setPreferredSize(new Dimension(300, 80));
+        botonCod.addActionListener( (evt) -> abrirCod());
 
+        
         frame.getContentPane().setLayout(new GridBagLayout());
-        frame.getContentPane().add(boton);
+        constraints.gridy = 0; constraints.gridx = 0;
+        frame.getContentPane().add(boton,constraints);
+        
+        //Panel vacío para "espaciar"
+        constraints.gridy = 1; constraints.ipady = 50;
+        frame.getContentPane().add(new JPanel(), constraints);
+        
+        constraints.gridy = 2; constraints.ipady = 0;
+        frame.getContentPane().add(botonCod, constraints);
 
+        boton = new JButton("<html><center><h1>Calcular ruido<br>de un canal</h1></center></html>");
+        boton.setPreferredSize(new Dimension(300, 80));
+        boton.addActionListener( (evt) -> calcularRuido() );
+
+        //Panel vacío para "espaciar"
+        constraints.gridy = 3; constraints.ipady = 50;
+        frame.getContentPane().add(new JPanel(), constraints);
+
+
+        constraints.gridy = 4; constraints.ipady = 0;
+        frame.getContentPane().add(boton,constraints);
+
+        
         frame.setVisible(true);
     }
 }

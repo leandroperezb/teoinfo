@@ -57,16 +57,39 @@ public class Imagen extends JPanel{
             }
         }
 
+        //Para agregar un 0 o un 255 si faltan
+        int tamanio = repeticiones.size();
+        if (!repeticiones.containsKey(0))
+            tamanio++;
+        if (!repeticiones.containsKey(255))
+            tamanio++;
+
         //Cargar en el dataset los valores obtenidos
-        double[] y = new double[repeticiones.size()];
-        double[] x = new double[repeticiones.size()];
-        double[] minX = new double[repeticiones.size()];
-        double [] maxX = new double[repeticiones.size()];
+        double[] y = new double[tamanio];
+        double[] x = new double[tamanio];
+        double[] minX = new double[tamanio];
+        double [] maxX = new double[tamanio];
         int contador = 0;
         for(Integer i: repeticiones.keySet()) {
             y[contador] = repeticiones.get(i);
             x[contador] = i; minX[contador] = i - 0.5d; maxX[contador] = i + 0.5d;
             contador++;
+        }
+
+        //Agregar los extremos del rango del histograma si es que faltan
+        if (!repeticiones.containsKey(0)) {
+            tamanio--;
+            y[tamanio] = 0;
+            x[tamanio] = 0;
+            minX[tamanio] = 0;
+            maxX[tamanio] = 0.5d;
+        }
+        if (!repeticiones.containsKey(255)) {
+            tamanio--;
+            y[tamanio] = 0;
+            x[tamanio] = 255;
+            minX[tamanio] = 255 - 0.5d;
+            maxX[tamanio] = 255;
         }
 
         dataset.addSeries("Intensidades de color",
@@ -85,6 +108,10 @@ public class Imagen extends JPanel{
 
     public int getColor(int x, int y){
         return (new Color(imagen.getRGB(x, y), true)).getRed();
+    }
+
+    public void setColor(int x, int y, int color){
+        imagen.setRGB(x, y, (new Color(color, color, color).getRGB()));
     }
 
     public List<Imagen> obtenerCuadrantes(){

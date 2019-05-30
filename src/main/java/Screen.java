@@ -29,7 +29,7 @@ public class Screen extends JPanel implements Runnable{
     private final Color ColorMayorEntropia = Color.GREEN;
     private final Color ColorMenorEntropia = Color.BLUE;
 	private final Color ColorPromedioEntropia = Color.ORANGE;
-    private Imagen imagen;
+    private static Imagen imagen;
     private static JFrame frame;
 
     private static double esperanzaAMostrar;
@@ -84,6 +84,10 @@ public class Screen extends JPanel implements Runnable{
 		img = null;
 		imagenAnalizada = -1;
 		repaint();
+	}
+	
+	public static Imagen getImagen() {
+		return imagen;
 	}
 
 	private void encontrarPosicionesDeEntropias(){
@@ -219,6 +223,7 @@ public class Screen extends JPanel implements Runnable{
 			botones.get(i).paintComponent(g);
 		}
 
+		g.setColor(Color.black);
 		g.drawString("(Haga click en un bloque para obtener sus datos)" , 20, this.getHeight() - 20);
 
 		if(imagenAnalizada != -1)
