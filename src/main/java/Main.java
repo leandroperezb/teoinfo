@@ -35,7 +35,7 @@ public class Main {
     static JButton guardarInfo = null;
     
     static JButton botonCod = null;
-    static JButton StCod = new JButton("<html><h1>Codificar imagen</h1></html>");
+    static JButton StCod = new JButton("<html><h2>Guardar imagen codificada</h2></html>");
 
     static JFreeChart generarHistograma(JFrame frame, DefaultIntervalXYDataset dataset, int i, boolean mostrar) {
         JFreeChart histograma = ChartFactory.createHistogram("Histograma del bloque N°"+i, "Intensidades",
@@ -329,7 +329,7 @@ public class Main {
         
        //boton de abrir codificación
         JPanel panelCargaCod = new JPanel(); panelCargaCod.setLayout(new GridBagLayout());
-			botonCod = new JButton("<html><h1>Abrir codificación</h1></html>");
+			botonCod = new JButton("<html><h2>Abrir imagen codificada</h2></html>");
 			botonCod.addActionListener( (evt) -> abrirCod() );
             constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
 			panelCargaCod.add(botonCod, constraints);
@@ -388,7 +388,7 @@ public class Main {
         boton.setPreferredSize(new Dimension(300, 80));
         boton.addActionListener( (evt) -> abrirArchivo(frame) );
         
-        botonCod = new JButton("<html><h1>Abrir codificación</h1></html>");
+        botonCod = new JButton("<html><center><h1>Abrir imagen codificada</h1></center></html>");
         botonCod.setPreferredSize(new Dimension(300, 80));
         botonCod.addActionListener( (evt) -> abrirCod());
 
