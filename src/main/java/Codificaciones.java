@@ -241,7 +241,7 @@ public class Codificaciones {
             if (hayPar){
                 //Si está codificado como par <Símbolo, Cantidad>, leer los dos bytes del par
                 int color = buffer.leerByte() & 255;
-                int cantidad = buffer.leerByte() & 255;
+                int cantidad = buffer.leerInt();
                 for (int i = 0; i < cantidad; i++){
                     //Añadir tantos píxeles consecutivos del mismo color como indique la cantidad
                     pixeles[pos] = color;
@@ -300,7 +300,7 @@ public class Codificaciones {
         } else {
             buffer.agregarBoolean(true); //Indicar que se codifica con un número de longitud
             buffer.agregarByte((byte) colorAnterior);
-            buffer.agregarByte((byte) contador);
+            buffer.agregarInt(contador);
         }
     }
 
