@@ -56,6 +56,8 @@ public class Screen extends JPanel implements Runnable{
     private String botonMHName = "Mostrar Histograma";
     
     private static int imagenAnalizada;
+
+    private static KeyHandel keyHandel = new KeyHandel();
     
 
 	public Screen(Imagen imagen, JFrame f) {
@@ -70,8 +72,8 @@ public class Screen extends JPanel implements Runnable{
         
 		reset(imagen);
 
-		f.addMouseListener(new KeyHandel());
-		f.addMouseMotionListener(new KeyHandel());
+		f.addMouseListener(keyHandel);
+		f.addMouseMotionListener(keyHandel);
 	}
 
 	void onNuevosEpsilons(){
@@ -139,7 +141,7 @@ public class Screen extends JPanel implements Runnable{
 		inicializarBotones();
 	}
 
-	private static void frenarThreads() {
+	static void frenarThreads() {
 		if (threadEsperanza.isAlive()) {
 			//Si la ejecución anterior no terminó, la aborto y reseteo por las dudas el valor
 			//que la imagen haya guardado, dado que podría haberse guardado un valor no válido

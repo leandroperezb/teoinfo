@@ -35,6 +35,7 @@ public class Main {
     static JButton guardarInfo = null;
     
     static JButton botonCod = null;
+    static JButton botonVolver = null;
     static JButton StCod = new JButton("<html><h2>Guardar imagen codificada</h2></html>");
 
     static JFreeChart generarHistograma(JFrame frame, DefaultIntervalXYDataset dataset, int i, boolean mostrar) {
@@ -150,6 +151,7 @@ public class Main {
 
                 texto.setVisible(true);
                 setearEpsilons.setEnabled(false); addImagen.setEnabled(false); guardarInfo.setEnabled(false);
+                botonVolver.setEnabled(false); botonCod.setEnabled(false); StCod.setEnabled(false);
                 String directorio = fileChooser.getSelectedFile().getAbsolutePath();
 
                 TrabajoPractico.incisoA(directorio);
@@ -159,6 +161,7 @@ public class Main {
 
                 texto.setVisible(false);
                 setearEpsilons.setEnabled(true); addImagen.setEnabled(true); guardarInfo.setEnabled(true);
+                botonVolver.setEnabled(true); botonCod.setEnabled(true); StCod.setEnabled(true);
 
                 JOptionPane.showMessageDialog(null, "Archivos guardados correctamente", "", JOptionPane.INFORMATION_MESSAGE);
             }).start();
@@ -296,7 +299,7 @@ public class Main {
         panelLateral.add(panelBoton, constraints);
 
         //Panel vacío para "espaciar"
-        constraints.gridy = 5; constraints.weighty = 0.2d;
+        constraints.gridy = 5; constraints.weighty = 0.166666666666d;
         panelLateral.add(new JPanel(), constraints);
 
         
@@ -312,7 +315,7 @@ public class Main {
             constraints.gridy = 1; constraints.weightx = 1d;
             panelGuardarDatos.add(panelGuardandoDatos, constraints);
 
-		constraints.gridy = 6; constraints.weighty = 0.2d; constraints.weightx = 0d;
+		constraints.gridy = 6; constraints.weighty = 0.166666666666d; constraints.weightx = 0d;
 		panelLateral.add(panelGuardarDatos, constraints);
 
 
@@ -323,7 +326,7 @@ public class Main {
             constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
             panelCargaImagen.add(addImagen, constraints);
 
-        constraints.gridy = 7; constraints.weighty = 0.2d; constraints.weightx = 0d;
+        constraints.gridy = 7; constraints.weighty = 0.166666666666d; constraints.weightx = 0d;
         panelLateral.add(panelCargaImagen, constraints);
 
         
@@ -334,7 +337,7 @@ public class Main {
             constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
 			panelCargaCod.add(botonCod, constraints);
 		
-		constraints.gridy = 8; constraints.weighty = 0.2d; constraints.weightx = 0d;
+		constraints.gridy = 8; constraints.weighty = 0.166666666666d; constraints.weightx = 0d;
 		panelLateral.add(panelCargaCod, constraints);
 
 
@@ -344,8 +347,18 @@ public class Main {
         constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
         panelCodImagen.add(StCod, constraints);
 
-        constraints.gridy = 9; constraints.weighty = 0.2d; constraints.weightx = 0d;
+        constraints.gridy = 9; constraints.weighty = 0.166666666666d; constraints.weightx = 0d;
         panelLateral.add(panelCodImagen, constraints);
+
+        //Botón de volver
+        JPanel panelVolver = new JPanel(); panelVolver.setLayout(new GridBagLayout());
+        botonVolver = new JButton("<html><h2>Volver al inicio</h2></html>");
+        botonVolver.addActionListener( (evt) -> inicio());
+        constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+        panelVolver.add(botonVolver, constraints);
+
+        constraints.gridy = 10; constraints.weighty = 0.166666666666d; constraints.weightx = 0d;
+        panelLateral.add(panelVolver, constraints);
 
     }
 
@@ -374,33 +387,31 @@ public class Main {
         }
     }
 
-    public static void main(String[] args){
-        frame = new JFrame("Teoría de la información");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-        frame.setMinimumSize(new Dimension(930, 600));
-        frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
-        
+    public static void inicio(){
+        Screen.frenarThreads();
+        Screen.sc = null;
+        frame.getContentPane().removeAll();
+        frame.repaint();
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH; constraints.weighty = 0d; constraints.weightx = 0d;
-        
+
         JButton boton = new JButton("<html><h1>Abrir imagen</h1></html>");
         boton.setPreferredSize(new Dimension(300, 80));
         boton.addActionListener( (evt) -> abrirArchivo(frame) );
-        
+
         botonCod = new JButton("<html><center><h1>Abrir imagen codificada</h1></center></html>");
         botonCod.setPreferredSize(new Dimension(300, 80));
         botonCod.addActionListener( (evt) -> abrirCod());
 
-        
+
         frame.getContentPane().setLayout(new GridBagLayout());
         constraints.gridy = 0; constraints.gridx = 0;
         frame.getContentPane().add(boton,constraints);
-        
+
         //Panel vacío para "espaciar"
         constraints.gridy = 1; constraints.ipady = 50;
         frame.getContentPane().add(new JPanel(), constraints);
-        
+
         constraints.gridy = 2; constraints.ipady = 0;
         frame.getContentPane().add(botonCod, constraints);
 
@@ -416,7 +427,16 @@ public class Main {
         constraints.gridy = 4; constraints.ipady = 0;
         frame.getContentPane().add(boton,constraints);
 
-        
+
         frame.setVisible(true);
+    }
+
+    public static void main(String[] args){
+        frame = new JFrame("Teoría de la información");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        frame.setMinimumSize(new Dimension(930, 600));
+        frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
+        inicio();
     }
 }
