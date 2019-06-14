@@ -12,8 +12,8 @@ public class Canales {
         }
 
         //Contar cantidad de dependencias de un color a otro (en las distintas fuentes/imágenes)
-        for (int y = 0; y < independiente.getHeight(); y++){
-            for (int x = 0; x < independiente.getWidth(); x++){
+        for (int y = 0; y < independiente.getAlto(); y++){
+            for (int x = 0; x < independiente.getAncho(); x++){
                 int colorIndependiente = independiente.getColor(x, y);
                 int colorCondicionado = condicionada.getColor(x, y);
                 sumatorias[colorIndependiente]++;

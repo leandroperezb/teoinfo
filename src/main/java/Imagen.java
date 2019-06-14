@@ -32,6 +32,9 @@ public class Imagen extends JPanel{
     private Lock mutDvio = new ReentrantLock();
     private Lock mutVrnz = new ReentrantLock();
 
+    private boolean recalcularEscala = false;
+    private double ESCALA_IMAGEN = 1;
+
     public Imagen(BufferedImage imagen){
         if (imagen == null) throw new IllegalArgumentException("No se permite un buffer nulo");
         this.imagen = imagen;
@@ -40,14 +43,19 @@ public class Imagen extends JPanel{
 
     }
 
+    public Imagen(BufferedImage imagen, boolean recalcular){
+        this(imagen);
+        recalcularEscala = recalcular;
+    }
+
     DefaultIntervalXYDataset hacerDatasetRepeticiones(){
         DefaultIntervalXYDataset dataset = new DefaultIntervalXYDataset();
 
         Map<Integer, Integer> repeticiones = new HashMap<>();
 
         //Anotar colores existentes y contar las repeticiones (cantidad de apariciones)
-        for (int y = 0; y < this.getHeight(); y++){
-            for (int x = 0; x < this.getWidth(); x++){
+        for (int y = 0; y < this.getAlto(); y++){
+            for (int x = 0; x < this.getAncho(); x++){
                 int color = this.getColor(x, y);
                 if (repeticiones.containsKey(color)) {
                     repeticiones.put(color, repeticiones.get(color) + 1);
@@ -98,11 +106,11 @@ public class Imagen extends JPanel{
         return dataset;
     }
 
-    public int getWidth(){
+    public int getAncho(){
         return imagen.getWidth();
     }
 
-    public int getHeight(){
+    public int getAlto(){
         return imagen.getHeight();
     }
 
@@ -117,10 +125,10 @@ public class Imagen extends JPanel{
     public List<Imagen> obtenerCuadrantes(){
         List<Imagen> lista = new ArrayList<>();
 
-        for (int y = 0; y < this.getHeight(); y += Imagen.TAMANIOBLOQUECUADRANTE){
-            for (int x = 0; x < this.getWidth(); x += Imagen.TAMANIOBLOQUECUADRANTE){
-                int ancho = Math.min(Imagen.TAMANIOBLOQUECUADRANTE, this.getWidth() - x);
-                int alto = Math.min(Imagen.TAMANIOBLOQUECUADRANTE, this.getHeight() - y);
+        for (int y = 0; y < this.getAlto(); y += Imagen.TAMANIOBLOQUECUADRANTE){
+            for (int x = 0; x < this.getAncho(); x += Imagen.TAMANIOBLOQUECUADRANTE){
+                int ancho = Math.min(Imagen.TAMANIOBLOQUECUADRANTE, this.getAncho() - x);
+                int alto = Math.min(Imagen.TAMANIOBLOQUECUADRANTE, this.getAlto() - y);
                 lista.add(new Imagen(imagen.getSubimage(x, y, ancho, alto)));
             }
         }
@@ -146,8 +154,8 @@ public class Imagen extends JPanel{
 
 
         //Contabilizar cada transición entre símbolos
-        for (int y = 0; y < this.getHeight(); y++){
-            for (int x = 0; x < this.getWidth(); x++){
+        for (int y = 0; y < this.getAlto(); y++){
+            for (int x = 0; x < this.getAncho(); x++){
                 int color = this.getColor(x, y);
                 if (anterior >= 0) {
                     probabilidades[anterior][color]++;
@@ -179,8 +187,8 @@ public class Imagen extends JPanel{
 
 
         //Contabilizar cada transición entre símbolos
-        for (int y = 0; y < this.getHeight(); y++){
-            for (int x = 0; x < this.getWidth(); x++){
+        for (int y = 0; y < this.getAlto(); y++){
+            for (int x = 0; x < this.getAncho(); x++){
                 int color = this.getColor(x, y);
                 probabilidades[color]++;
                 total++;
@@ -256,7 +264,39 @@ public class Imagen extends JPanel{
     	this.y = y;
     }
 
+
+    private void recalcularEscala(){
+        double heightLibre = this.getHeight(); double widthLibre = this.getWidth();
+        double width = imagen.getWidth(); double height = imagen.getHeight();
+        double factor = 0d;
+        if (width > widthLibre){
+            factor = widthLibre / width;
+            height = height * factor;
+            if (height > heightLibre){
+                factor *= heightLibre / height;
+            }
+        }else{
+            factor = heightLibre / height;
+            width = width * factor;
+            if (width > widthLibre){
+                factor *= widthLibre / width;
+            }
+        }
+
+
+        ESCALA_IMAGEN = 1/factor;
+        if (ESCALA_IMAGEN < 1d)
+            ESCALA_IMAGEN = 1d;
+    }
+
 	public void paintComponent(Graphics g) {
-		g.drawImage(imagen, (int)x, (int)y, (int)x+imagen.getWidth()/ Screen.ESCALA_IMAGEN, (int)y+imagen.getHeight()/ Screen.ESCALA_IMAGEN, 0, 0, imagen.getWidth(), imagen.getHeight(), Color.BLACK, null);
+        super.paintComponent(g);
+        if (recalcularEscala) {
+            recalcularEscala();
+            int widthLibre = (this.getWidth() - (int) (imagen.getWidth() / ESCALA_IMAGEN))/2;
+            g.drawImage(imagen, widthLibre, 0, (int) (imagen.getWidth() / ESCALA_IMAGEN) + widthLibre, (int) (imagen.getHeight() / ESCALA_IMAGEN), 0, 0, imagen.getWidth(), imagen.getHeight(), Color.BLACK, null);
+        }else {
+            g.drawImage(imagen, (int) x, (int) y, (int) x + imagen.getWidth() / Screen.ESCALA_IMAGEN, (int) y + imagen.getHeight() / Screen.ESCALA_IMAGEN, 0, 0, imagen.getWidth(), imagen.getHeight(), Color.BLACK, null);
+        }
 	}
 }
