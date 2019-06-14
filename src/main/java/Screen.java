@@ -57,7 +57,7 @@ public class Screen extends JPanel implements Runnable{
     
     private static int imagenAnalizada;
 
-    private static KeyHandel keyHandel = new KeyHandel();
+    private static KeyHandel keyHandel = null;
     
 
 	public Screen(Imagen imagen, JFrame f) {
@@ -72,8 +72,11 @@ public class Screen extends JPanel implements Runnable{
         
 		reset(imagen);
 
-		f.addMouseListener(keyHandel);
-		f.addMouseMotionListener(keyHandel);
+		if (keyHandel == null) {
+			keyHandel = new KeyHandel();
+			f.addMouseListener(keyHandel);
+			f.addMouseMotionListener(keyHandel);
+		}
 	}
 
 	void onNuevosEpsilons(){
