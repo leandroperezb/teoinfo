@@ -56,6 +56,8 @@ public class Screen extends JPanel implements Runnable{
     private String botonMHName = "Mostrar Histograma";
     
     private static int imagenAnalizada;
+
+    private static KeyHandel keyHandel = null;
     
 
 	public Screen(Imagen imagen, JFrame f) {
@@ -70,8 +72,11 @@ public class Screen extends JPanel implements Runnable{
         
 		reset(imagen);
 
-		f.addMouseListener(new KeyHandel());
-		f.addMouseMotionListener(new KeyHandel());
+		if (keyHandel == null) {
+			keyHandel = new KeyHandel();
+			f.addMouseListener(keyHandel);
+			f.addMouseMotionListener(keyHandel);
+		}
 	}
 
 	void onNuevosEpsilons(){
@@ -121,7 +126,7 @@ public class Screen extends JPanel implements Runnable{
 		frenarThreads();
 
 		this.imagen = imagen;
-		imagenWidth = imagen.getWidth();
+		imagenWidth = imagen.getAncho();
 		imagenes = imagen.obtenerCuadrantes();
 		imagenAnalizada = -1;
 		img = null;
@@ -139,7 +144,7 @@ public class Screen extends JPanel implements Runnable{
 		inicializarBotones();
 	}
 
-	private static void frenarThreads() {
+	static void frenarThreads() {
 		if (threadEsperanza.isAlive()) {
 			//Si la ejecución anterior no terminó, la aborto y reseteo por las dudas el valor
 			//que la imagen haya guardado, dado que podría haberse guardado un valor no válido
@@ -157,7 +162,7 @@ public class Screen extends JPanel implements Runnable{
 
 	protected void recalcularEscala(){
 		double heightLibre = this.getHeight() - 25; double widthLibre = this.getWidth() - 300d;
-		double width = imagen.getWidth(); double height = imagen.getHeight();
+		double width = imagen.getAncho(); double height = imagen.getAlto();
 		double factor = 0d;
 		if (width > widthLibre){
 			factor = widthLibre / width;
@@ -184,15 +189,15 @@ public class Screen extends JPanel implements Runnable{
 		botones.clear();
 		int contImagenes = 0;
 		int x = 0; int y = 0;
-		for(int j = 0; j< imagen.getHeight(); j += Imagen.TAMANIOBLOQUECUADRANTE) {
+		for(int j = 0; j< imagen.getAlto(); j += Imagen.TAMANIOBLOQUECUADRANTE) {
 			int valorY = 0;
-			for(int i = 0; i< imagen.getWidth(); i += Imagen.TAMANIOBLOQUECUADRANTE){
+			for(int i = 0; i< imagen.getAncho(); i += Imagen.TAMANIOBLOQUECUADRANTE){
 				botones.add(new Boton(x,
 						y,
-						imagenes.get(contImagenes).getWidth()/ ESCALA_IMAGEN,
-						imagenes.get(contImagenes).getHeight()/ ESCALA_IMAGEN));
-				x += imagenes.get(contImagenes).getWidth()/ ESCALA_IMAGEN;
-				valorY = imagenes.get(contImagenes).getHeight()/ ESCALA_IMAGEN;
+						imagenes.get(contImagenes).getAncho()/ ESCALA_IMAGEN,
+						imagenes.get(contImagenes).getAlto()/ ESCALA_IMAGEN));
+				x += imagenes.get(contImagenes).getAlto()/ ESCALA_IMAGEN;
+				valorY = imagenes.get(contImagenes).getAncho()/ ESCALA_IMAGEN;
 				contImagenes++;
 			}
 			y += valorY;
@@ -279,7 +284,7 @@ public class Screen extends JPanel implements Runnable{
 		if (imagen == null) return;
 
 		//Si el mouse entra a un bloque que no era el que se encontraba seleccionado anteriormente, redibujar
-		if (mseOver.getX() < imagen.getWidth()/ ESCALA_IMAGEN && mseOver.getY() < imagen.getHeight()/ ESCALA_IMAGEN
+		if (mseOver.getX() < imagen.getAncho()/ ESCALA_IMAGEN && mseOver.getY() < imagen.getAlto()/ ESCALA_IMAGEN
 				&& mseOver.getX() >= 0 && mseOver.getY() >=0){
 			for(int i=0;i<botones.size();i++) {
 				if (botones.get(i).contains(mseOver) && i != bloqueSeleccionado) {
@@ -309,7 +314,7 @@ public class Screen extends JPanel implements Runnable{
 			return;
 		}
 		
-		if (mseClick.getX() < imagen.getWidth()/ ESCALA_IMAGEN && mseClick.getY() < imagen.getHeight()/ ESCALA_IMAGEN
+		if (mseClick.getX() < imagen.getAncho()/ ESCALA_IMAGEN && mseClick.getY() < imagen.getAlto()/ ESCALA_IMAGEN
 				&& mseClick.getX() >= 0 && mseClick.getY() >=0){
 			for(int i=0;i<botones.size();i++) {
 				if(botones.get(i).contains(mseClick)) {

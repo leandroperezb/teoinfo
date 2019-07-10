@@ -35,7 +35,12 @@ public class Main {
     static JButton guardarInfo = null;
     
     static JButton botonCod = null;
+    static JButton botonVolver = null;
     static JButton StCod = new JButton("<html><h2>Guardar imagen codificada</h2></html>");
+
+    private static Imagen imEntrada = null;
+    private static Imagen imSalida = null;
+    private static JPanel resultadosCanal = null;
 
     static JFreeChart generarHistograma(JFrame frame, DefaultIntervalXYDataset dataset, int i, boolean mostrar) {
         JFreeChart histograma = ChartFactory.createHistogram("Histograma del bloque N°"+i, "Intensidades",
@@ -150,6 +155,7 @@ public class Main {
 
                 texto.setVisible(true);
                 setearEpsilons.setEnabled(false); addImagen.setEnabled(false); guardarInfo.setEnabled(false);
+                botonVolver.setEnabled(false); botonCod.setEnabled(false); StCod.setEnabled(false);
                 String directorio = fileChooser.getSelectedFile().getAbsolutePath();
 
                 TrabajoPractico.incisoA(directorio);
@@ -159,6 +165,7 @@ public class Main {
 
                 texto.setVisible(false);
                 setearEpsilons.setEnabled(true); addImagen.setEnabled(true); guardarInfo.setEnabled(true);
+                botonVolver.setEnabled(true); botonCod.setEnabled(true); StCod.setEnabled(true);
 
                 JOptionPane.showMessageDialog(null, "Archivos guardados correctamente", "", JOptionPane.INFORMATION_MESSAGE);
             }).start();
@@ -296,7 +303,7 @@ public class Main {
         panelLateral.add(panelBoton, constraints);
 
         //Panel vacío para "espaciar"
-        constraints.gridy = 5; constraints.weighty = 0.2d;
+        constraints.gridy = 5; constraints.weighty = 0.166666666666d;
         panelLateral.add(new JPanel(), constraints);
 
         
@@ -312,7 +319,7 @@ public class Main {
             constraints.gridy = 1; constraints.weightx = 1d;
             panelGuardarDatos.add(panelGuardandoDatos, constraints);
 
-		constraints.gridy = 6; constraints.weighty = 0.2d; constraints.weightx = 0d;
+		constraints.gridy = 6; constraints.weighty = 0.166666666666d; constraints.weightx = 0d;
 		panelLateral.add(panelGuardarDatos, constraints);
 
 
@@ -323,7 +330,7 @@ public class Main {
             constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
             panelCargaImagen.add(addImagen, constraints);
 
-        constraints.gridy = 7; constraints.weighty = 0.2d; constraints.weightx = 0d;
+        constraints.gridy = 7; constraints.weighty = 0.166666666666d; constraints.weightx = 0d;
         panelLateral.add(panelCargaImagen, constraints);
 
         
@@ -334,7 +341,7 @@ public class Main {
             constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
 			panelCargaCod.add(botonCod, constraints);
 		
-		constraints.gridy = 8; constraints.weighty = 0.2d; constraints.weightx = 0d;
+		constraints.gridy = 8; constraints.weighty = 0.166666666666d; constraints.weightx = 0d;
 		panelLateral.add(panelCargaCod, constraints);
 
 
@@ -344,69 +351,167 @@ public class Main {
         constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
         panelCodImagen.add(StCod, constraints);
 
-        constraints.gridy = 9; constraints.weighty = 0.2d; constraints.weightx = 0d;
+        constraints.gridy = 9; constraints.weighty = 0.166666666666d; constraints.weightx = 0d;
         panelLateral.add(panelCodImagen, constraints);
+
+        //Botón de volver
+        JPanel panelVolver = new JPanel(); panelVolver.setLayout(new GridBagLayout());
+        botonVolver = new JButton("<html><h2>Volver al inicio</h2></html>");
+        botonVolver.addActionListener( (evt) -> inicio());
+        constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+        panelVolver.add(botonVolver, constraints);
+
+        constraints.gridy = 10; constraints.weighty = 0.166666666666d; constraints.weightx = 0d;
+        panelLateral.add(panelVolver, constraints);
 
     }
 
-    public static void calcularRuido(){
+    private static void hacerCalculosDeCanal(){
+        double ruido = Canales.ruidoCanal(imEntrada, imSalida);
+        double perdida = Canales.ruidoCanal(imSalida, imEntrada);
+
+        resultadosCanal.removeAll();
+        resultadosCanal.setLayout(new GridLayout(1,2));
+        JPanel aux = new JPanel(); aux.add(new JLabel("<html><h2>Ruido del canal: " + ruido + "</h2></html>"));
+        resultadosCanal.add(aux);
+        aux = new JPanel(); aux.add(new JLabel("<html><h2>Pérdida del canal: " + perdida + "</h2></html>"));
+        resultadosCanal.add(aux);
+        frame.repaint();
+        frame.setVisible(true);
+    }
+
+
+    private static void cargarImg(JPanel panel, String titulo, boolean esEntrada){
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Seleccione la imagen de entrada al canal (la original)");
+        fileChooser.setDialogTitle(titulo);
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
         int result = fileChooser.showOpenDialog(frame);
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
 
             try {
-                Imagen imagenEntrada = new Imagen(ImageIO.read(selectedFile));
-                JFileChooser fileChooser2 = new JFileChooser();
-                fileChooser2.setDialogTitle("Seleccione la imagen de salida del canal");
-                fileChooser2.setCurrentDirectory(new File(System.getProperty("user.dir")));
-
-                if (fileChooser2.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION){
-                    Imagen imagenSalida = new Imagen(ImageIO.read(fileChooser2.getSelectedFile()));
-
-                    JOptionPane.showMessageDialog(null, "Ruido del canal: " + Canales.ruidoCanal(imagenEntrada, imagenSalida), "", JOptionPane.INFORMATION_MESSAGE);
-                }
+                Imagen imagen = new Imagen(ImageIO.read(selectedFile), true);
+                if (esEntrada)
+                    imEntrada = imagen;
+                else
+                    imSalida = imagen;
+                if (imEntrada != null && imSalida != null)
+                    hacerCalculosDeCanal();
+                panel.removeAll();
+                panel.add(imagen);
+                frame.repaint();
+                frame.setVisible(true);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public static void main(String[] args){
-        frame = new JFrame("Teoría de la información");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-        frame.setMinimumSize(new Dimension(930, 600));
-        frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
-        
+    private static void analizarCanal(){
+        imEntrada = null; imSalida = null;
+        frame.getContentPane().removeAll();
+        frame.repaint();
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH; constraints.weighty = 0d; constraints.weightx = 0d;
-        
+        frame.getContentPane().setLayout(new GridBagLayout());
+
+        JPanel panelImagenEntrada = new JPanel();
+        panelImagenEntrada.setLayout(new GridBagLayout());
+        constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+        JPanel aux = new JPanel();
+        aux.add(new JLabel("Imagen de entrada al canal"));
+        panelImagenEntrada.add(aux, constraints);
+        JPanel imgEntrada = new JPanel();
+        imgEntrada.setLayout(new GridLayout());
+        constraints.gridy = 1; constraints.weighty = 1d;
+        panelImagenEntrada.add(imgEntrada, constraints);
+        aux = new JPanel();
+        constraints.gridy = 2; constraints.weighty = 0d;
+        JButton boton = new JButton("<html><h2>Abrir imagen de entrada</h2></html>");
+        boton.addActionListener( (evt) -> {cargarImg(imgEntrada, "Seleccione la imagen de entrada al canal (la original)", true); frame.repaint(); } );
+        aux.add(boton);
+        panelImagenEntrada.add(aux, constraints);
+
+
+        constraints.gridy = 0; constraints.gridx = 0; constraints.weighty = 1d; constraints.weightx = 0.5d;
+        frame.getContentPane().add(panelImagenEntrada, constraints);
+
+
+        JPanel panelImagenSalida = new JPanel();
+        panelImagenSalida.setLayout(new GridBagLayout());
+        constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+        aux = new JPanel();
+        aux.add(new JLabel("Imagen de salida del canal"));
+        panelImagenSalida.add(aux, constraints);
+        JPanel imgSalida = new JPanel();
+        imgSalida.setLayout(new GridLayout());
+        constraints.gridy = 1; constraints.weighty = 1d;
+        panelImagenSalida.add(imgSalida, constraints);
+        aux = new JPanel();
+        constraints.gridy = 2; constraints.weighty = 0d;
+        boton = new JButton("<html><h2>Abrir imagen de salida</h2></html>");
+        boton.addActionListener( (evt) -> {cargarImg(imgSalida, "Seleccione la imagen de salida del canal", false); frame.repaint(); } );
+        aux.add(boton);
+        panelImagenSalida.add(aux, constraints);
+
+
+        constraints.gridy = 0; constraints.gridx = 1; constraints.weighty = 1d; constraints.weightx = 0.5d;
+        frame.getContentPane().add(panelImagenSalida, constraints);
+
+        resultadosCanal = new JPanel();
+        resultadosCanal.add(new JLabel("<html><h1>Cargue las dos imágenes para analizar el canal</h1></html>"));
+
+        constraints.gridy = 1; constraints.gridx = 0; constraints.weighty = 0d; constraints.weightx = 1d;
+        constraints.gridwidth = 2;
+        frame.getContentPane().add(resultadosCanal, constraints);
+
+
+
+        JPanel panelVolver = new JPanel(); panelVolver.setLayout(new GridBagLayout());
+        botonVolver = new JButton("<html><h3>Volver al inicio</h3></html>");
+        botonVolver.addActionListener( (evt) -> inicio());
+        constraints.gridy = 0; constraints.weightx = 1d; constraints.weighty = 0d;
+        panelVolver.add(botonVolver, constraints);
+
+        constraints.gridy = 2; constraints.weighty = 0d; constraints.weightx = 1d;
+        frame.getContentPane().add(panelVolver, constraints);
+
+
+        frame.repaint();
+        frame.setVisible(true);
+    }
+
+    public static void inicio(){
+        Screen.frenarThreads();
+        Screen.sc = null;
+        frame.getContentPane().removeAll();
+        frame.repaint();
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.BOTH; constraints.weighty = 0d; constraints.weightx = 0d;
+
         JButton boton = new JButton("<html><h1>Abrir imagen</h1></html>");
         boton.setPreferredSize(new Dimension(300, 80));
         boton.addActionListener( (evt) -> abrirArchivo(frame) );
-        
+
         botonCod = new JButton("<html><center><h1>Abrir imagen codificada</h1></center></html>");
         botonCod.setPreferredSize(new Dimension(300, 80));
         botonCod.addActionListener( (evt) -> abrirCod());
 
-        
+
         frame.getContentPane().setLayout(new GridBagLayout());
         constraints.gridy = 0; constraints.gridx = 0;
         frame.getContentPane().add(boton,constraints);
-        
+
         //Panel vacío para "espaciar"
         constraints.gridy = 1; constraints.ipady = 50;
         frame.getContentPane().add(new JPanel(), constraints);
-        
+
         constraints.gridy = 2; constraints.ipady = 0;
         frame.getContentPane().add(botonCod, constraints);
 
-        boton = new JButton("<html><center><h1>Calcular ruido<br>de un canal</h1></center></html>");
+        boton = new JButton("<html><center><h1>Realizar análisis<br>de un canal</h1></center></html>");
         boton.setPreferredSize(new Dimension(300, 80));
-        boton.addActionListener( (evt) -> calcularRuido() );
+        boton.addActionListener( (evt) -> analizarCanal() );
 
         //Panel vacío para "espaciar"
         constraints.gridy = 3; constraints.ipady = 50;
@@ -416,7 +521,16 @@ public class Main {
         constraints.gridy = 4; constraints.ipady = 0;
         frame.getContentPane().add(boton,constraints);
 
-        
+
         frame.setVisible(true);
+    }
+
+    public static void main(String[] args){
+        frame = new JFrame("Teoría de la información");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        frame.setMinimumSize(new Dimension(930, 600));
+        frame.setLocation(FRAME_LOC_X, FRAME_LOC_Y);
+        inicio();
     }
 }
